@@ -1,0 +1,69 @@
+{
+  "name": "kura-xmitter",
+  "version": "0.0.1",
+  "description": "The FileSystem API abstraction library, file transmitter",
+  "author": "Yoshihiro Seki",
+  "license": "MIT",
+  "homepage": "https://github.com/nikochan2k/kura-xmitter",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "kura",
+    "FileSystem",
+    "storage",
+    "transmit",
+    "synchronize"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikochan2k/kura-xmitter.git"
+  },
+  "scripts": {
+    "clean": "rimraf ./lib",
+    "compile": "tsc",
+    "build": "npm-run-all clean compile",
+    "npm-version": "npm version patch",
+    "npm-login": "npm login",
+    "npm-publish": "npm publish",
+    "release": "npm-run-all clean compile npm-version npm-login npm-publish",
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/src/__tests__/*.spec.+(ts|tsx|js)"
+    ],
+    "preset": "ts-jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.9.1",
+    "@types/node": "^13.5.0",
+    "aws-sdk": "^2.610.0",
+    "fake-indexeddb": "^3.0.0",
+    "jest": "^25.1.0",
+    "kura-s3": "^0.1.7",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.0",
+    "ts-jest": "^25.0.0",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "kura": "^0.1.32"
+  }
+}
