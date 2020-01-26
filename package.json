@@ -64,6 +64,6 @@
     "typescript": "^3.7.5"
   },
   "dependencies": {
-    "kura": "^0.1.32"
+    "kura": "^0.1.35"
   }
 }
