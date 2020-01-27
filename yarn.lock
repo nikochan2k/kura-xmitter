@@ -2276,10 +2276,15 @@ kura-s3@^0.1.7:
     aws-sdk "^2.610.0"
     kura "^0.1.32"
 
-kura@^0.1.32, kura@^0.1.35:
+kura@^0.1.32:
   version "0.1.35"
   resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.35.tgz#20974f8f492ecd6d67452b011d4ab6a8d00d195d"
   integrity sha512-akaL8z5pHTIsWpJaMTokim9FsbIK54n63exBWr+tbPalkQ04xhq9hi3OPsGV+ZTGBouIkAvIts/M8F12eFa4MA==
+
+kura@^0.1.37:
+  version "0.1.37"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.37.tgz#c7e891c1d8543ee08a2fde67003db533781ed0b1"
+  integrity sha512-C/zt6kQJfyr4ybikN4bC3lBMgQ9sAh5LcjeMfe8t0gJyxWJxAy++3HpBNOMmun8WFQK+UTb19V8s7LQvwYAjxg==
 
 leven@^3.1.0:
   version "3.1.0"

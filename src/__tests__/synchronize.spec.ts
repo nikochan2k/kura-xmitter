@@ -40,10 +40,10 @@ beforeAll(async () => {
     "web-file-system-test",
     true
   );
-  remote = await s3LocalFileSystem.requestFileSystemAsync(
+  remote = ((await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
-  );
+  )) as any) as FileSystemAsync;
 
   synchronizer = new Synchronizer(local, remote);
 });

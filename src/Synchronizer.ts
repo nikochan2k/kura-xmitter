@@ -21,7 +21,7 @@ export class Synchronizer {
   constructor(public src: FileSystemAsync, public dst: FileSystemAsync) {
     const srcFS = src.fileSystem as AbstractFileSystem<AbstractAccessor>;
     this.srcAccessor = srcFS.accessor;
-    if (!this.srcAccessor || !this.srcAccessor.useIndex) {
+    if (!this.srcAccessor || !this.srcAccessor.hasIndex) {
       throw new Error(
         `Source filesystem "${srcFS.name}" has no index "${INDEX_FILE_NAME}"`
       );
@@ -29,7 +29,7 @@ export class Synchronizer {
 
     const dstFS = dst.fileSystem as AbstractFileSystem<AbstractAccessor>;
     this.dstAccessor = dstFS.accessor;
-    if (!this.dstAccessor || !this.dstAccessor.useIndex) {
+    if (!this.dstAccessor || !this.dstAccessor.hasIndex) {
       throw new Error(
         `Destination filesystem "${dstFS.name}" has no index "${INDEX_FILE_NAME}"`
       );
