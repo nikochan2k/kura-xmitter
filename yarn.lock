@@ -2268,18 +2268,13 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-s3@^0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.7.tgz#f848168090427e6ecb135494d7de7e6ef8b60460"
-  integrity sha512-3CrqOsrEjOu5krovN0OnTdJ4jUeKSd1bk/febZqI8TUPUumbUN+dkXUZAhnaAs2J6A4ieLyFmWOJN0NBIEfo0w==
+kura-s3@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.8.tgz#8745537dc0b4d154cd2fefa5ba67536b48c23ce0"
+  integrity sha512-X1jS01RbkFIDC7lKWGqr+OpTo1kqrMfPK14OM2pJscmT6tiedhe7E14G5w8mBMyDkkLUfxVMYOVR4jiRByBaBw==
   dependencies:
     aws-sdk "^2.610.0"
-    kura "^0.1.32"
-
-kura@^0.1.32:
-  version "0.1.35"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.35.tgz#20974f8f492ecd6d67452b011d4ab6a8d00d195d"
-  integrity sha512-akaL8z5pHTIsWpJaMTokim9FsbIK54n63exBWr+tbPalkQ04xhq9hi3OPsGV+ZTGBouIkAvIts/M8F12eFa4MA==
+    kura "^0.1.37"
 
 kura@^0.1.37:
   version "0.1.37"
