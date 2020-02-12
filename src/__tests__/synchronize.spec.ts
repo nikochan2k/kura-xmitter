@@ -77,7 +77,7 @@ test("add a text file", async done => {
     exclusive: true
   });
   const writer = await localFE.createWriter();
-  await writer.write(new Blob(["hoge"], { type: "text/plain" }));
+  await writer.writeFile(new Blob(["hoge"], { type: "text/plain" }));
 
   await synchronizer.synchronizeAll();
 
