@@ -570,21 +570,6 @@ atob@^2.1.2:
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
 
-aws-sdk@^2.610.0:
-  version "2.610.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.610.0.tgz#a8633204bed83df763095824f8110ced4a717d2a"
-  integrity sha512-kqcoCTKjbxrUo2KeLQR2Jw6l4PvkbHXSDk8KqF2hXcpHibiOcMXZZPVe9X+s90RC/B2+qU95M7FImp9ByMcw7A==
-  dependencies:
-    buffer "4.9.1"
-    events "1.1.1"
-    ieee754 "1.1.13"
-    jmespath "0.15.0"
-    querystring "0.2.0"
-    sax "1.2.1"
-    url "0.10.3"
-    uuid "3.3.2"
-    xml2js "0.4.19"
-
 aws-sdk@^2.616.0:
   version "2.616.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.616.0.tgz#c8772f2cde6e250ce126747e6f995aa969f0632a"
@@ -654,6 +639,11 @@ balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
   integrity sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
+
+base-64@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/base-64/-/base-64-0.1.0.tgz#780a99c84e7d600260361511c4877613bf24f6bb"
+  integrity sha1-eAqZyE59YAJgNhURxId2E78k9rs=
 
 base64-arraybuffer-es6@0.5.0:
   version "0.5.0"
@@ -2248,18 +2238,17 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-s3@^0.1.10:
-  version "0.1.10"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.10.tgz#0e9be58c1c5b3930a9f98e8668a9843bf8329f4f"
-  integrity sha512-TiJltXtXeUOQBWn0gAagz101Iy4MaHzfgpZj9Ql1pOg+bH8BJWLS6JDhjDgxTRhlRAjW87XAQLkpzq/5Oo0PlA==
-  dependencies:
-    aws-sdk "^2.610.0"
-    kura "^0.1.39"
+kura-s3@^0.1.11:
+  version "0.1.11"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.11.tgz#651f5d7a966ce632164532091bcd583aca9d5ac6"
+  integrity sha512-Atvk0iaeR5SqoN8faGQVX8IxaHWP/HDFmPT16h3djdroSiqOm02l3KJujdgkVAYWkk0NdfYr+ySqPibbWl3pyg==
 
-kura@^0.1.39:
-  version "0.1.39"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.39.tgz#c805bc1bca93ae6add254d2f840e9e92e47edbb1"
-  integrity sha512-Mli9G0RvXlyImqvv6SpIu/eDG3gZFdN/vDuXgBYmMlUyeVNCkiSGrWURt4NqbvwvRet6FQb11je40mLcFSD5ww==
+kura@^0.1.41:
+  version "0.1.41"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.41.tgz#943211c6889b96408089673b8bc1e84a0b6aad00"
+  integrity sha512-RbGQMbswaLmXM/0RxlFvirbzO3Pxyb4/9BBfnCU5WD/KT7Wr+JSOXkQxsKhcDy/FN48IxBR2X0UtMAgOYoG7TQ==
+  dependencies:
+    base-64 "^0.1.0"
 
 leven@^3.1.0:
   version "3.1.0"
