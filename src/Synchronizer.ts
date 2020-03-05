@@ -2,9 +2,9 @@ import {
   AbstractAccessor,
   AbstractFileSystem,
   FileSystemAsync,
-  FileSystemIndex,
   FileSystemObject,
-  INDEX_FILE_NAME
+  INDEX_FILE_PATH,
+  FileNameIndex
 } from "kura";
 
 class Deletion {
@@ -19,19 +19,19 @@ export class Synchronizer {
   private srcAccessor: AbstractAccessor;
 
   constructor(public src: FileSystemAsync, public dst: FileSystemAsync) {
-    const srcFS = src.fileSystem as AbstractFileSystem<AbstractAccessor>;
+    const srcFS = src.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.srcAccessor = srcFS.accessor;
     if (!this.srcAccessor || !this.srcAccessor.hasIndex) {
       throw new Error(
-        `Source filesystem "${srcFS.name}" has no index "${INDEX_FILE_NAME}"`
+        `Source filesystem "${srcFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
     }
 
-    const dstFS = dst.fileSystem as AbstractFileSystem<AbstractAccessor>;
+    const dstFS = dst.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.dstAccessor = dstFS.accessor;
     if (!this.dstAccessor || !this.dstAccessor.hasIndex) {
       throw new Error(
-        `Destination filesystem "${dstFS.name}" has no index "${INDEX_FILE_NAME}"`
+        `Destination filesystem "${dstFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
     }
   }
@@ -68,24 +68,26 @@ export class Synchronizer {
   }
 
   private async synchronize(dirPath: string, deletion: Deletion) {
-    const srcIndex = (await this.srcAccessor.getIndex(dirPath)) || {};
-    const dstIndex = (await this.dstAccessor.getIndex(dirPath)) || {};
-    const index: FileSystemIndex = {};
+    const srcFileNameIndex =
+      (await this.srcAccessor.getFileNameIndex(dirPath)) || {};
+    const dstFileNameIndex =
+      (await this.dstAccessor.getFileNameIndex(dirPath)) || {};
+    const fileNameIndex: FileNameIndex = {};
 
-    const srcKeys = Object.keys(srcIndex);
-    const dstKeys = Object.keys(dstIndex);
-    outer: while (0 < srcKeys.length) {
-      const srcPath = srcKeys.shift();
-      if (!srcPath) {
+    const srcNames = Object.keys(srcFileNameIndex);
+    const dstNames = Object.keys(dstFileNameIndex);
+    outer: while (0 < srcNames.length) {
+      const srcName = srcNames.shift();
+      if (!srcName) {
         break;
       }
-      const srcRecord = srcIndex[srcPath];
+      const srcRecord = srcFileNameIndex[srcName];
       const srcObj = srcRecord.obj;
-      for (let i = 0, end = dstKeys.length; i < end; i++) {
-        const dstPath = dstKeys[i];
-        const dstRecord = dstIndex[dstPath];
+      for (let i = 0, end = dstNames.length; i < end; i++) {
+        const dstName = dstNames[i];
+        const dstRecord = dstFileNameIndex[dstName];
         const dstObj = dstRecord.obj;
-        if (srcPath === dstPath) {
+        if (srcName === dstName) {
           if (srcObj.size == null && dstObj.size != null) {
             // TODO
             throw new Error("source is directory and destination is file");
@@ -99,15 +101,15 @@ export class Synchronizer {
           if (srcObj.size != null) {
             if (srcDeleted != null && dstDeleted == null) {
               deletion.dstFiles.push(dstObj.fullPath);
-              index[srcPath] = srcRecord;
+              fileNameIndex[srcName] = srcRecord;
             } else if (srcDeleted == null && dstDeleted != null) {
               deletion.srcFiles.push(srcObj.fullPath);
-              index[dstPath] = dstRecord;
+              fileNameIndex[dstName] = dstRecord;
             } else if (srcDeleted != null && dstDeleted != null) {
               if (srcDeleted <= dstDeleted) {
-                index[srcPath] = srcRecord;
+                fileNameIndex[srcName] = srcRecord;
               } else {
-                index[dstPath] = dstRecord;
+                fileNameIndex[dstName] = dstRecord;
               }
             } else {
               const srcUpdated = srcRecord.updated;
@@ -120,7 +122,7 @@ export class Synchronizer {
                     srcObj
                   );
                 }
-                index[srcPath] = srcRecord;
+                fileNameIndex[srcName] = srcRecord;
               } else {
                 if (dstUpdated < srcUpdated) {
                   await this.copyFile(
@@ -128,38 +130,38 @@ export class Synchronizer {
                     this.dstAccessor,
                     srcObj
                   );
-                  index[srcPath] = srcRecord;
+                  fileNameIndex[srcName] = srcRecord;
                 } else {
                   await this.copyFile(
                     this.dstAccessor,
                     this.srcAccessor,
                     dstObj
                   );
-                  index[dstPath] = dstRecord;
+                  fileNameIndex[dstName] = dstRecord;
                 }
               }
             }
           } else {
             if (srcDeleted != null && dstDeleted == null) {
               deletion.dstDirectories.push(dstObj.fullPath);
-              index[srcPath] = srcRecord;
+              fileNameIndex[srcName] = srcRecord;
             } else if (srcDeleted == null && dstDeleted != null) {
               deletion.srcDirectories.push(srcObj.fullPath);
-              index[dstPath] = dstRecord;
+              fileNameIndex[dstName] = dstRecord;
             } else if (srcDeleted != null && dstDeleted != null) {
               if (srcDeleted <= dstDeleted) {
-                index[srcPath] = srcRecord;
+                fileNameIndex[srcName] = srcRecord;
               } else {
-                index[dstPath] = dstRecord;
+                fileNameIndex[dstName] = dstRecord;
               }
             } else {
               await this.synchronize(srcObj.fullPath, deletion);
-              index[srcPath] = srcRecord;
+              fileNameIndex[srcName] = srcRecord;
             }
           }
 
-          dstKeys.splice(i);
-          delete dstIndex[dstPath];
+          dstNames.splice(i);
+          delete dstFileNameIndex[dstName];
           continue outer;
         }
       }
@@ -170,10 +172,10 @@ export class Synchronizer {
         await this.dstAccessor.putObject(srcObj);
         await this.synchronize(srcObj.fullPath, deletion);
       }
-      index[srcPath] = srcRecord;
+      fileNameIndex[srcName] = srcRecord;
     }
 
-    for (const dstRecord of Object.values(dstIndex)) {
+    for (const dstRecord of Object.values(dstFileNameIndex)) {
       const dstObj = dstRecord.obj;
       const destPath = dstObj.fullPath;
       if (dstObj.size != null) {
@@ -182,10 +184,10 @@ export class Synchronizer {
         await this.srcAccessor.putObject(dstObj);
         await this.synchronize(destPath, deletion);
       }
-      index[destPath] = dstRecord;
+      fileNameIndex[dstObj.name] = dstRecord;
     }
 
-    await this.srcAccessor.putIndex(dirPath, index);
-    await this.dstAccessor.putIndex(dirPath, index);
+    await this.srcAccessor.putFileNameIndex(dirPath, fileNameIndex);
+    await this.dstAccessor.putFileNameIndex(dirPath, fileNameIndex);
   }
 }
