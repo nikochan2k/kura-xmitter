@@ -38,6 +38,7 @@ beforeAll(async () => {
   const s3LocalFileSystem = new S3LocalFileSystemAsync(
     options,
     "web-file-system-test",
+    "example",
     true
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
