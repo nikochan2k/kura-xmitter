@@ -48,13 +48,13 @@ export class Synchronizer {
       await this.srcAccessor.delete(deletion.srcFiles[i], true);
     }
     for (let i = deletion.dstFiles.length - 1; 0 <= i; i--) {
-      await this.srcAccessor.delete(deletion.dstFiles[i], true);
+      await this.dstAccessor.delete(deletion.dstFiles[i], true);
     }
     for (let i = deletion.srcDirectories.length - 1; 0 <= i; i--) {
       await this.srcAccessor.delete(deletion.srcDirectories[i], false);
     }
     for (let i = deletion.dstDirectories.length - 1; 0 <= i; i--) {
-      await this.srcAccessor.delete(deletion.dstDirectories[i], true);
+      await this.dstAccessor.delete(deletion.dstDirectories[i], false);
     }
   }
 
