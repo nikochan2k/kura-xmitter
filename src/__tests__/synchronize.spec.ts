@@ -139,7 +139,7 @@ test("create folder, and add a text file", async done => {
   done();
 });
 
-test("rename file", async done => {
+test("remove file", async done => {
   let localFE = await local.root.getFile("empty.txt");
   await localFE.remove();
 

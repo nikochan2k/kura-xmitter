@@ -1,6 +1,7 @@
 import {
   AbstractAccessor,
   AbstractFileSystem,
+  DirPathIndex,
   FileNameIndex,
   FileSystemAsync,
   FileSystemObject,
@@ -36,12 +37,20 @@ export class Synchronizer {
   }
 
   async synchronizeDirectory(dirPath: string, recursive: boolean) {
+    const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
+    const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
+
     await this.synchronize(
       dirPath,
       recursive,
       this.srcAccessor,
-      this.dstAccessor
+      srcDirPathIndex,
+      this.dstAccessor,
+      dstDirPathIndex
     );
+
+    await this.srcAccessor.putDirPathIndex(srcDirPathIndex);
+    await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
   }
 
   private async copyFile(
@@ -49,8 +58,9 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
   ) {
-    const srcBlob = await fromAccessor.getContent(obj.fullPath);
-    await toAccessor.putObject(obj, srcBlob);
+    const blob = await fromAccessor.doGetContent(obj.fullPath);
+    await toAccessor.doPutObject(obj);
+    await toAccessor.doPutContent(obj.fullPath, blob);
   }
 
   private async getIndex(
@@ -67,15 +77,28 @@ export class Synchronizer {
     dirPath: string,
     recursive: boolean,
     fromAccessor: AbstractAccessor,
-    toAccessor: AbstractAccessor
+    fromDirPathIndex: DirPathIndex,
+    toAccessor: AbstractAccessor,
+    toDirPathIndex: DirPathIndex
   ) {
-    // await this.synchronizeItself(dirPath, fromAccessor, toAccessor);
+    await this.synchronizeSelf(
+      dirPath,
+      fromAccessor,
+      fromDirPathIndex,
+      toAccessor,
+      toDirPathIndex
+    );
 
-    const fileNameIndex: FileNameIndex = {};
-
-    const fromFileNameIndex =
-      (await fromAccessor.getFileNameIndex(dirPath)) || {};
-    const toFileNameIndex = (await toAccessor.getFileNameIndex(dirPath)) || {};
+    let fromFileNameIndex = fromDirPathIndex[dirPath];
+    if (!fromFileNameIndex) {
+      fromFileNameIndex = {};
+      fromDirPathIndex[dirPath] = fromFileNameIndex;
+    }
+    let toFileNameIndex = toDirPathIndex[dirPath];
+    if (!toFileNameIndex) {
+      toFileNameIndex = {};
+      toDirPathIndex[dirPath] = toFileNameIndex;
+    }
 
     const fromNames = Object.keys(fromFileNameIndex);
     const toNames = Object.keys(toFileNameIndex);
@@ -94,92 +117,54 @@ export class Synchronizer {
 
         await this.synchronizeOne(
           recursive,
-          fileNameIndex,
           fromAccessor,
+          fromDirPathIndex,
           fromFileNameIndex,
           toAccessor,
+          toDirPathIndex,
           toFileNameIndex,
           srcName
         );
 
         toNames.splice(i);
-        delete toFileNameIndex[dstName];
         continue outer;
       }
 
       // destination not found.
       await this.synchronizeOne(
         recursive,
-        fileNameIndex,
         fromAccessor,
+        fromDirPathIndex,
         fromFileNameIndex,
         toAccessor,
+        toDirPathIndex,
         toFileNameIndex,
         srcName
       );
     }
 
     // source not found
-    for (const toRecord of Object.values(toFileNameIndex)) {
-      const dstObj = toRecord.obj;
-      const dstName = dstObj.name;
+    for (const toName of toNames) {
       await this.synchronizeOne(
         recursive,
-        fileNameIndex,
         toAccessor,
+        toDirPathIndex,
         toFileNameIndex,
         fromAccessor,
+        fromDirPathIndex,
         fromFileNameIndex,
-        dstName
+        toName
       );
-
-      fileNameIndex[dstName] = toRecord;
     }
-
-    await fromAccessor.putFileNameIndex(dirPath, fileNameIndex);
-    await toAccessor.putFileNameIndex(dirPath, fileNameIndex);
-  }
-
-  private async synchronizeItself(
-    dirPath: string,
-    fromAccessor: AbstractAccessor,
-    toAccessor: AbstractAccessor
-  ) {
-    if (dirPath === "/") {
-      return;
-    }
-
-    const [fromFileNameIndex, fromName] = await this.getIndex(
-      fromAccessor,
-      dirPath
-    );
-    const [toFileNameIndex] = await this.getIndex(toAccessor, dirPath);
-    const fileNameIndex: FileNameIndex = {};
-    await this.synchronizeOne(
-      false,
-      fileNameIndex,
-      fromAccessor,
-      fromFileNameIndex,
-      toAccessor,
-      toFileNameIndex,
-      fromName
-    );
-
-    for (let [name, record] of Object.entries(fileNameIndex)) {
-      fromFileNameIndex[name] = record;
-      toFileNameIndex[name] = record;
-    }
-
-    await fromAccessor.putFileNameIndex(dirPath, fileNameIndex);
-    await toAccessor.putFileNameIndex(dirPath, fileNameIndex);
   }
 
   private async synchronizeOne(
     recursive: boolean,
-    fileNameIndex: FileNameIndex,
     fromAccessor: AbstractAccessor,
+    fromDirPathIndex: DirPathIndex,
     fromFileNameIndex: FileNameIndex,
     toAccessor: AbstractAccessor,
+    toDirPathIndex: DirPathIndex,
     toFileNameIndex: FileNameIndex,
     name: string
   ) {
@@ -224,38 +209,42 @@ export class Synchronizer {
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted <= toUpdated) {
           await this.copyFile(toAccessor, fromAccessor, toObj);
-          fileNameIndex[name] = toRecord;
+          fromFileNameIndex[name] = toRecord;
         } else {
-          await toAccessor.delete(toFullPath, true);
-          fileNameIndex[name] = fromRecord;
+          await toAccessor.doDelete(toFullPath, true);
+          toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted <= fromUpdated) {
           await this.copyFile(fromAccessor, toAccessor, fromObj);
-          fileNameIndex[name] = fromRecord;
+          toFileNameIndex[name] = fromRecord;
         } else {
-          await toAccessor.delete(fromFullPath, true);
-          fileNameIndex[name] = toRecord;
+          await toAccessor.doDelete(fromFullPath, true);
+          fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
         // prioritize old
-        if (fromDeleted <= toDeleted) {
-          fileNameIndex[name] = fromRecord;
+        if (fromDeleted < toDeleted) {
+          toFileNameIndex[name] = fromRecord;
+          await toAccessor.doDelete(fromFullPath, true);
+        } else if (toDeleted < fromDeleted) {
+          fromFileNameIndex[name] = toRecord;
+          await fromAccessor.doDelete(fromFullPath, true);
         } else {
-          fileNameIndex[name] = toRecord;
+          await toAccessor.doDelete(fromFullPath, true); // TODO for bug
         }
       } else {
         if (toUpdated < fromUpdated) {
           await this.copyFile(fromAccessor, toAccessor, fromObj);
-          fileNameIndex[name] = fromRecord;
+          toFileNameIndex[name] = fromRecord;
         } else if (fromUpdated < toUpdated) {
           await this.copyFile(toAccessor, fromAccessor, toObj);
-          fileNameIndex[name] = toRecord;
+          fromFileNameIndex[name] = toRecord;
         } else {
           if (fromObj.size !== toObj.size) {
             await this.copyFile(fromAccessor, toAccessor, fromObj);
+            toFileNameIndex[name] = fromRecord;
           }
-          fileNameIndex[name] = fromRecord;
         }
       }
     } else {
@@ -268,36 +257,56 @@ export class Synchronizer {
               toFullPath,
               recursive,
               toAccessor,
-              fromAccessor
+              toDirPathIndex,
+              fromAccessor,
+              fromDirPathIndex
             );
           }
-          fileNameIndex[name] = toRecord;
+          fromFileNameIndex[name] = toRecord;
         } else {
-          await toAccessor.deleteRecursively(toFullPath);
-          fileNameIndex[name] = fromRecord;
+          await this.synchronize(
+            toFullPath,
+            recursive,
+            toAccessor,
+            toDirPathIndex,
+            fromAccessor,
+            fromDirPathIndex
+          );
+          await toAccessor.doDelete(fromFullPath, false);
+          toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted < fromUpdated) {
-          await toAccessor.putObject(toObj);
+          await toAccessor.doPutObject(toObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
               recursive,
               fromAccessor,
-              toAccessor
+              fromDirPathIndex,
+              toAccessor,
+              toDirPathIndex
             );
           }
-          fileNameIndex[name] = fromRecord;
+          toFileNameIndex[name] = fromRecord;
         } else {
-          await fromAccessor.deleteRecursively(fromFullPath);
-          fileNameIndex[name] = toRecord;
+          await this.synchronize(
+            toFullPath,
+            recursive,
+            fromAccessor,
+            fromDirPathIndex,
+            toAccessor,
+            toDirPathIndex
+          );
+          await fromAccessor.doDelete(fromFullPath, false);
+          fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
         // prioritize old
-        if (fromDeleted <= toDeleted) {
-          fileNameIndex[name] = fromRecord;
-        } else {
-          fileNameIndex[name] = toRecord;
+        if (fromDeleted < toDeleted) {
+          toFileNameIndex[name] = fromRecord;
+        } else if (toDeleted < fromDeleted) {
+          fromFileNameIndex[name] = toRecord;
         }
       } else {
         if (recursive) {
@@ -305,21 +314,49 @@ export class Synchronizer {
             fromFullPath,
             recursive,
             fromAccessor,
-            toAccessor
+            fromDirPathIndex,
+            toAccessor,
+            toDirPathIndex
           );
-          fileNameIndex[name] = fromRecord;
+          toFileNameIndex[name] = fromRecord;
         } else {
           if (fromUpdated < toUpdated) {
-            await fromAccessor.putObject(toObj);
-            fileNameIndex[name] = toRecord;
+            await fromAccessor.doPutObject(toObj);
+            fromFileNameIndex[name] = toRecord;
           } else if (toUpdated < fromUpdated) {
-            await toAccessor.putObject(fromObj);
-            fileNameIndex[name] = fromRecord;
-          } else {
-            fileNameIndex[name] = fromRecord;
+            await toAccessor.doPutObject(fromObj);
+            toFileNameIndex[name] = fromRecord;
           }
         }
       }
     }
+  }
+
+  private async synchronizeSelf(
+    dirPath: string,
+    fromAccessor: AbstractAccessor,
+    fromDirPathIndex: DirPathIndex,
+    toAccessor: AbstractAccessor,
+    toDirPathIndex: DirPathIndex
+  ) {
+    if (dirPath === "/") {
+      return;
+    }
+
+    const [fromFileNameIndex, name] = await this.getIndex(
+      fromAccessor,
+      dirPath
+    );
+    const [toFileNameIndex] = await this.getIndex(toAccessor, dirPath);
+    await this.synchronizeOne(
+      false,
+      fromAccessor,
+      fromDirPathIndex,
+      fromFileNameIndex,
+      toAccessor,
+      toDirPathIndex,
+      toFileNameIndex,
+      name
+    );
   }
 }
