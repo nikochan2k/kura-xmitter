@@ -16,7 +16,7 @@ let synchronizer: Synchronizer;
 beforeAll(async () => {
   const idbLocalFileSystem = new IdbLocalFileSystemAsync(
     "web-file-system-test",
-    true
+    { useIndex: true }
   );
   local = await idbLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -45,14 +45,14 @@ beforeAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    true
+    { useIndex: true }
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
   );
 
-  synchronizer = new Synchronizer(local, remote);
+  synchronizer = new Synchronizer(local, remote, true);
 });
 
 test("add a empty file", async done => {

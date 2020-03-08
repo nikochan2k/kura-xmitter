@@ -14,10 +14,14 @@ export class Synchronizer {
   private dstAccessor: AbstractAccessor;
   private srcAccessor: AbstractAccessor;
 
-  constructor(public src: FileSystemAsync, public dst: FileSystemAsync) {
+  constructor(
+    public src: FileSystemAsync,
+    public dst: FileSystemAsync,
+    private verbose = false
+  ) {
     const srcFS = src.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.srcAccessor = srcFS.accessor;
-    if (!this.srcAccessor || !this.srcAccessor.hasIndex) {
+    if (!this.srcAccessor || !this.srcAccessor.options.useIndex) {
       throw new Error(
         `Source filesystem "${srcFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
@@ -25,7 +29,7 @@ export class Synchronizer {
 
     const dstFS = dst.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.dstAccessor = dstFS.accessor;
-    if (!this.dstAccessor || !this.dstAccessor.hasIndex) {
+    if (!this.dstAccessor || !this.dstAccessor.options.useIndex) {
       throw new Error(
         `Destination filesystem "${dstFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
@@ -37,8 +41,14 @@ export class Synchronizer {
   }
 
   async synchronizeDirectory(dirPath: string, recursive: boolean) {
+    if (this.srcAccessor.options.verbose || this.dstAccessor.options.verbose) {
+      console.log(`synchronize ${dirPath}`);
+    }
+
     const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
+
+    await this.synchronizeSelf(dirPath);
 
     await this.synchronize(
       dirPath,
@@ -58,9 +68,28 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
   ) {
-    const blob = await fromAccessor.doGetContent(obj.fullPath);
-    await toAccessor.doPutObject(obj);
-    await toAccessor.doPutContent(obj.fullPath, blob);
+    this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
+    const blob = await fromAccessor._getContent(obj.fullPath);
+    await toAccessor._putObject(obj);
+    await toAccessor._putContent(obj.fullPath, blob);
+  }
+
+  private debug(
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    title: string,
+    path: string
+  ) {
+    if (!this.verbose) {
+      return;
+    }
+    if (fromAccessor) {
+      console.log(
+        `${fromAccessor.name} => ${toAccessor.name} - ${title}: ${path}`
+      );
+    } else {
+      console.log(`${toAccessor.name} - ${title}: ${path}`);
+    }
   }
 
   private async getIndex(
@@ -81,14 +110,6 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     toDirPathIndex: DirPathIndex
   ) {
-    await this.synchronizeSelf(
-      dirPath,
-      fromAccessor,
-      fromDirPathIndex,
-      toAccessor,
-      toDirPathIndex
-    );
-
     let fromFileNameIndex = fromDirPathIndex[dirPath];
     if (!fromFileNameIndex) {
       fromFileNameIndex = {};
@@ -211,7 +232,8 @@ export class Synchronizer {
           await this.copyFile(toAccessor, fromAccessor, toObj);
           fromFileNameIndex[name] = toRecord;
         } else {
-          await toAccessor.doDelete(toFullPath, true);
+          this.debug(null, toAccessor, "delete", toFullPath);
+          await toAccessor._delete(toFullPath, true);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
@@ -219,20 +241,19 @@ export class Synchronizer {
           await this.copyFile(fromAccessor, toAccessor, fromObj);
           toFileNameIndex[name] = fromRecord;
         } else {
-          await toAccessor.doDelete(fromFullPath, true);
+          this.debug(null, fromAccessor, "delete", fromFullPath);
+          await fromAccessor._delete(fromFullPath, true);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
         // prioritize old
         if (fromDeleted < toDeleted) {
           toFileNameIndex[name] = fromRecord;
-          await toAccessor.doDelete(fromFullPath, true);
         } else if (toDeleted < fromDeleted) {
           fromFileNameIndex[name] = toRecord;
-          await fromAccessor.doDelete(fromFullPath, true);
-        } else {
-          await toAccessor.doDelete(fromFullPath, true); // TODO for bug
         }
+        this.debug(null, fromAccessor, "delete", fromFullPath);
+        await toAccessor._delete(fromFullPath, true); // TODO for bug
       } else {
         if (toUpdated < fromUpdated) {
           await this.copyFile(fromAccessor, toAccessor, fromObj);
@@ -251,7 +272,8 @@ export class Synchronizer {
       // directory
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted < toUpdated) {
-          await fromAccessor.putObject(toObj);
+          this.debug(null, fromAccessor, "putObject", toFullPath);
+          await fromAccessor._putObject(toObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -272,12 +294,14 @@ export class Synchronizer {
             fromAccessor,
             fromDirPathIndex
           );
-          await toAccessor.doDelete(fromFullPath, false);
+          this.debug(null, toAccessor, "delete", toFullPath);
+          await toAccessor._delete(fromFullPath, false);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted < fromUpdated) {
-          await toAccessor.doPutObject(toObj);
+          this.debug(null, toAccessor, "putObject", toFullPath);
+          await toAccessor._putObject(fromObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -298,7 +322,8 @@ export class Synchronizer {
             toAccessor,
             toDirPathIndex
           );
-          await fromAccessor.doDelete(fromFullPath, false);
+          this.debug(null, fromAccessor, "delete", fromFullPath);
+          await fromAccessor._delete(toFullPath, false);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
@@ -321,10 +346,12 @@ export class Synchronizer {
           toFileNameIndex[name] = fromRecord;
         } else {
           if (fromUpdated < toUpdated) {
-            await fromAccessor.doPutObject(toObj);
+            this.debug(null, fromAccessor, "putObject", toFullPath);
+            await fromAccessor._putObject(toObj);
             fromFileNameIndex[name] = toRecord;
           } else if (toUpdated < fromUpdated) {
-            await toAccessor.doPutObject(fromObj);
+            this.debug(null, toAccessor, "putObject", fromFullPath);
+            await toAccessor._putObject(fromObj);
             toFileNameIndex[name] = fromRecord;
           }
         }
@@ -332,31 +359,25 @@ export class Synchronizer {
     }
   }
 
-  private async synchronizeSelf(
-    dirPath: string,
-    fromAccessor: AbstractAccessor,
-    fromDirPathIndex: DirPathIndex,
-    toAccessor: AbstractAccessor,
-    toDirPathIndex: DirPathIndex
-  ) {
+  private async synchronizeSelf(dirPath: string) {
     if (dirPath === "/") {
       return;
     }
 
-    const [fromFileNameIndex, name] = await this.getIndex(
-      fromAccessor,
+    const [srcFileNameIndex, name] = await this.getIndex(
+      this.srcAccessor,
       dirPath
     );
-    const [toFileNameIndex] = await this.getIndex(toAccessor, dirPath);
-    await this.synchronizeOne(
-      false,
-      fromAccessor,
-      fromDirPathIndex,
-      fromFileNameIndex,
-      toAccessor,
-      toDirPathIndex,
-      toFileNameIndex,
-      name
-    );
+    const srcRecord = srcFileNameIndex[name];
+    const srcObj = srcRecord.obj;
+    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
+    const dstRecord = dstFileNameIndex[name];
+    if (dstRecord == null) {
+      await this.copyFile(this.srcAccessor, this.dstAccessor, srcObj);
+      dstFileNameIndex[name] = srcRecord;
+    } else if (srcRecord.updated < dstRecord.deleted) {
+      this.debug(null, this.srcAccessor, "delete", srcRecord.obj.fullPath);
+      await this.srcAccessor._delete(srcRecord.obj.fullPath, false); // TODO  recurcively
+    }
   }
 }

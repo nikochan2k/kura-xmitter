@@ -2233,15 +2233,15 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-s3@^0.1.17:
-  version "0.1.17"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.17.tgz#b9dddb5d69442b48b1617c15f8a1290f08480200"
-  integrity sha512-pi74wZ0qRjMVpBt0+hUQQo8mPmAg+BiJuVLFzOJdTwivVfDLXE4PMF2qDRnnRpAvsdHg6yHscGy6oB2Bhq8ifQ==
+kura-s3@^0.1.19:
+  version "0.1.19"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.19.tgz#97e25e51bf01f5ec52e18d123ae73451077d153b"
+  integrity sha512-kJa6cBEuvwXf4AZYBKvlyFfXMbsAvmbwx4veK8MLKC2OBt2Me98k8Tda5VJD/TQH3GkshC/xzhUpKtOr52+f9w==
 
-kura@^0.1.72:
-  version "0.1.72"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.72.tgz#d39b777217fbcbb6a6ac0d0b51633f7446e7d072"
-  integrity sha512-qGMvp74kcKykwlYwv8IyB9TOD49mi19zkJ+bx2G2tKZ2sP0lyDgNFlPFxmesEBMYArls37f6hTnuFcpSFUadTQ==
+kura@^0.1.77:
+  version "0.1.77"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.1.77.tgz#d3511249b7895ab207c770c606141cf1ce5e5810"
+  integrity sha512-Eunl1qR0DrEZOaXV0YiAd8aXi/9Vb+mKpYIer5r3zlN9VI1pIky7cVgICY5FJfCCbmP21sofXmQKHN3J3qMcAA==
   dependencies:
     base-64 "^0.1.0"
 
