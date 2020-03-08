@@ -252,8 +252,6 @@ export class Synchronizer {
         } else if (toDeleted < fromDeleted) {
           fromFileNameIndex[name] = toRecord;
         }
-        this.debug(null, fromAccessor, "delete", fromFullPath);
-        await toAccessor._delete(fromFullPath, true); // TODO for bug
       } else {
         if (toUpdated < fromUpdated) {
           await this.copyFile(fromAccessor, toAccessor, fromObj);
@@ -271,7 +269,7 @@ export class Synchronizer {
     } else {
       // directory
       if (fromDeleted != null && toDeleted == null) {
-        if (fromDeleted < toUpdated) {
+        if (fromDeleted <= toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
           await fromAccessor._putObject(toObj);
           if (recursive) {
@@ -299,7 +297,7 @@ export class Synchronizer {
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
-        if (toDeleted < fromUpdated) {
+        if (toDeleted <= fromUpdated) {
           this.debug(null, toAccessor, "putObject", toFullPath);
           await toAccessor._putObject(fromObj);
           if (recursive) {
@@ -334,6 +332,15 @@ export class Synchronizer {
           fromFileNameIndex[name] = toRecord;
         }
       } else {
+        if (fromUpdated < toUpdated) {
+          this.debug(null, fromAccessor, "putObject", toFullPath);
+          await fromAccessor._putObject(toObj);
+          fromFileNameIndex[name] = toRecord;
+        } else if (toUpdated < fromUpdated) {
+          this.debug(null, toAccessor, "putObject", fromFullPath);
+          await toAccessor._putObject(fromObj);
+          toFileNameIndex[name] = fromRecord;
+        }
         if (recursive) {
           await this.synchronize(
             fromFullPath,
@@ -343,17 +350,6 @@ export class Synchronizer {
             toAccessor,
             toDirPathIndex
           );
-          toFileNameIndex[name] = fromRecord;
-        } else {
-          if (fromUpdated < toUpdated) {
-            this.debug(null, fromAccessor, "putObject", toFullPath);
-            await fromAccessor._putObject(toObj);
-            fromFileNameIndex[name] = toRecord;
-          } else if (toUpdated < fromUpdated) {
-            this.debug(null, toAccessor, "putObject", fromFullPath);
-            await toAccessor._putObject(fromObj);
-            toFileNameIndex[name] = fromRecord;
-          }
         }
       }
     }
