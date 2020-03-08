@@ -1,8 +1,14 @@
 require("fake-indexeddb/auto");
 import { S3 } from "aws-sdk";
-import { Synchronizer } from "../Synchronizer";
-import { FileSystemAsync, IdbLocalFileSystemAsync } from "kura";
+import {
+  AbstractAccessor,
+  FileSystemAsync,
+  IdbLocalFileSystemAsync
+} from "kura";
 import { S3LocalFileSystemAsync } from "kura-s3";
+import { Synchronizer } from "../Synchronizer";
+
+AbstractAccessor.PUT_INDEX_THROTTLE = 0;
 
 let local: FileSystemAsync;
 let remote: FileSystemAsync;
@@ -114,19 +120,33 @@ test("create folder, and add a text file", async done => {
     create: true,
     exclusive: true
   });
-  await localDE.getFile("in.txt", {
+  let localFE = await localDE.getFile("in.txt", {
     create: true,
     exclusive: true
   });
+  const writer = await localFE.createWriter();
+  await writer.writeFile(new Blob(["hoge"], { type: "text/plain" }));
 
   await synchronizer.synchronizeAll();
 
-  const localFE = await local.root.getFile("/folder/in.txt");
+  // const localFE = await local.root.getFile("/folder/in.txt");
   const localMeta = await localFE.getMetadata();
   const remoteDE = await remote.root.getDirectory("folder");
   const remoteFE = await remoteDE.getFile("in.txt");
   const remoteMeta = await remoteFE.getMetadata();
   expect(remoteMeta.size).toBe(localMeta.size);
+
+  done();
+});
+
+test("rename file", async done => {
+  let localFE = await local.root.getFile("empty.txt");
+  await localFE.remove();
+
+  await synchronizer.synchronizeAll();
+
+  const remoteFE = await remote.root.getFile("/empty.txt");
+  expect(remoteFE).toBeNull();
 
   done();
 });

@@ -136,8 +136,6 @@ export class Synchronizer {
       fileNameIndex[dstName] = toRecord;
     }
 
-    console.log(dirPath, fileNameIndex);
-
     await fromAccessor.putFileNameIndex(dirPath, fileNameIndex);
     await toAccessor.putFileNameIndex(dirPath, fileNameIndex);
   }
@@ -254,6 +252,9 @@ export class Synchronizer {
           await this.copyFile(toAccessor, fromAccessor, toObj);
           fileNameIndex[name] = toRecord;
         } else {
+          if (fromObj.size !== toObj.size) {
+            await this.copyFile(fromAccessor, toAccessor, fromObj);
+          }
           fileNameIndex[name] = fromRecord;
         }
       }
@@ -300,29 +301,21 @@ export class Synchronizer {
         }
       } else {
         if (recursive) {
-          if (fromUpdated < toUpdated) {
-            await this.synchronize(
-              toFullPath,
-              recursive,
-              toAccessor,
-              fromAccessor
-            );
-            fileNameIndex[name] = toRecord;
-          } else {
-            await this.synchronize(
-              fromFullPath,
-              recursive,
-              fromAccessor,
-              toAccessor
-            );
-            fileNameIndex[name] = fromRecord;
-          }
+          await this.synchronize(
+            fromFullPath,
+            recursive,
+            fromAccessor,
+            toAccessor
+          );
+          fileNameIndex[name] = fromRecord;
         } else {
           if (fromUpdated < toUpdated) {
             await fromAccessor.putObject(toObj);
             fileNameIndex[name] = toRecord;
-          } else {
+          } else if (toUpdated < fromUpdated) {
             await toAccessor.putObject(fromObj);
+            fileNameIndex[name] = fromRecord;
+          } else {
             fileNameIndex[name] = fromRecord;
           }
         }
