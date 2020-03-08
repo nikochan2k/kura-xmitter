@@ -9,16 +9,23 @@ import {
   getParentPath,
   INDEX_FILE_PATH
 } from "kura";
+import { SyncOptions } from "./SyncOptions";
 
 export class Synchronizer {
   private dstAccessor: AbstractAccessor;
   private srcAccessor: AbstractAccessor;
+  private excludeFileNameRegExp: RegExp;
 
   constructor(
     public src: FileSystemAsync,
     public dst: FileSystemAsync,
-    private verbose = false
+    private options: SyncOptions = {}
   ) {
+    if (options.excludeFileNamePattern == null)
+      options.excludeFileNamePattern = "^\\..+$";
+    if (options.verbose == null) options.verbose = false;
+    this.excludeFileNameRegExp = new RegExp(options.excludeFileNamePattern);
+
     const srcFS = src.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.srcAccessor = srcFS.accessor;
     if (!this.srcAccessor || !this.srcAccessor.options.useIndex) {
@@ -80,7 +87,7 @@ export class Synchronizer {
     title: string,
     path: string
   ) {
-    if (!this.verbose) {
+    if (!this.options.verbose) {
       return;
     }
     if (fromAccessor) {
@@ -121,8 +128,12 @@ export class Synchronizer {
       toDirPathIndex[dirPath] = toFileNameIndex;
     }
 
-    const fromNames = Object.keys(fromFileNameIndex);
-    const toNames = Object.keys(toFileNameIndex);
+    const fromNames = Object.keys(fromFileNameIndex).filter(
+      name => !this.excludeFileNameRegExp.test(name)
+    );
+    const toNames = Object.keys(toFileNameIndex).filter(
+      name => !this.excludeFileNameRegExp.test(name)
+    );
     outer: while (0 < fromNames.length) {
       const srcName = fromNames.shift();
       if (!srcName) {

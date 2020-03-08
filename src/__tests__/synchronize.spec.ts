@@ -52,7 +52,7 @@ beforeAll(async () => {
     Number.MAX_VALUE
   );
 
-  synchronizer = new Synchronizer(local, remote, true);
+  synchronizer = new Synchronizer(local, remote, { verbose: true });
 });
 
 test("add a empty file", async done => {
@@ -111,6 +111,21 @@ test("add a text file", async done => {
   const localFEMeta = await localFE.getMetadata();
   const testTxtMeta = await testTxt.getMetadata();
   expect(testTxtMeta.size).toBe(localFEMeta.size);
+
+  done();
+});
+
+test("add a hidden file", async done => {
+  let localFE = await local.root.getFile(".hidden", {
+    create: true,
+    exclusive: true
+  });
+
+  await synchronizer.synchronizeAll();
+
+  const remoteReader = remote.root.createReader();
+  const remoteEntries = await remoteReader.readEntries();
+  expect(remoteEntries.length).toBe(2);
 
   done();
 });
