@@ -385,9 +385,10 @@ export class Synchronizer {
           }
           fromFileNameIndex[name] = toRecord;
         } else {
+          // force synchronize recursively if delete directory
           await this.synchronize(
             toFullPath,
-            recursive,
+            true,
             toAccessor,
             toDirPathIndex,
             fromAccessor,
@@ -413,9 +414,10 @@ export class Synchronizer {
           }
           toFileNameIndex[name] = fromRecord;
         } else {
+          // force synchronize recursively if delete directory
           await this.synchronize(
             toFullPath,
-            recursive,
+            true,
             fromAccessor,
             fromDirPathIndex,
             toAccessor,
@@ -435,11 +437,9 @@ export class Synchronizer {
       } else {
         if (fromUpdated < toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
-          await fromAccessor.putObject(toObj);
           fromFileNameIndex[name] = toRecord;
         } else if (toUpdated < fromUpdated) {
           this.debug(null, toAccessor, "putObject", fromFullPath);
-          await toAccessor.putObject(fromObj);
           toFileNameIndex[name] = fromRecord;
         }
         if (recursive) {
