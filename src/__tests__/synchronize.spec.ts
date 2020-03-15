@@ -3,7 +3,8 @@ import { S3 } from "aws-sdk";
 import {
   AbstractAccessor,
   FileSystemAsync,
-  IdbLocalFileSystemAsync
+  IdbLocalFileSystemAsync,
+  NotFoundError
 } from "kura";
 import { S3LocalFileSystemAsync } from "kura-s3";
 import { Synchronizer } from "../Synchronizer";
@@ -55,7 +56,7 @@ beforeAll(async () => {
   synchronizer = new Synchronizer(local, remote, { verbose: true });
 });
 
-test("add a empty file", async done => {
+test("add a empty file, sync all", async done => {
   let localFE = await local.root.getFile("empty.txt", {
     create: true,
     exclusive: true
@@ -78,7 +79,7 @@ test("add a empty file", async done => {
   done();
 });
 
-test("add a text file", async done => {
+test("add a text file, sync all", async done => {
   let localFE = await local.root.getFile("test.txt", {
     create: true,
     exclusive: true
@@ -115,8 +116,8 @@ test("add a text file", async done => {
   done();
 });
 
-test("add a hidden file", async done => {
-  let localFE = await local.root.getFile(".hidden", {
+test("add a hidden file, sync all", async done => {
+  await local.root.getFile(".hidden", {
     create: true,
     exclusive: true
   });
@@ -130,7 +131,7 @@ test("add a hidden file", async done => {
   done();
 });
 
-test("create folder, and add a text file", async done => {
+test("create folder, and add a text file, sync all", async done => {
   let localDE = await local.root.getDirectory("folder", {
     create: true,
     exclusive: true
@@ -154,7 +155,61 @@ test("create folder, and add a text file", async done => {
   done();
 });
 
-test("remove file", async done => {
+test("create nested folder, and add a empty file, sync dir", async done => {
+  const localParentDE = await local.root.getDirectory("folder");
+  const localFE = await localParentDE.getFile("fuga.txt", {
+    create: true,
+    exclusive: true
+  });
+  let writer = await localFE.createWriter();
+  await writer.writeFile(new Blob(["fuga"], { type: "text/plain" }));
+
+  const localDE = await localParentDE.getDirectory("nested", {
+    create: true,
+    exclusive: true
+  });
+  const nestedFE = await localDE.getFile("nested.txt", {
+    create: true,
+    exclusive: true
+  });
+  writer = await nestedFE.createWriter();
+  await writer.writeFile(new Blob(["nested"], { type: "text/plain" }));
+
+  await synchronizer.synchronizeDirectory("/folder", false);
+
+  // const localFE = await local.root.getFile("/folder/in.txt");
+  const localMeta = await localFE.getMetadata();
+  const remoteParentDE = await remote.root.getDirectory("folder");
+  const remoteFE = await remoteParentDE.getFile("fuga.txt");
+  const remoteMeta = await remoteFE.getMetadata();
+  expect(remoteMeta.size).toBe(localMeta.size);
+  const remoteDE = await remoteParentDE.getDirectory("nested");
+  expect(remoteDE.fullPath).toBe(localDE.fullPath);
+  try {
+    await remoteDE.getFile("nested.txt");
+  } catch (e) {
+    expect(e).toBeInstanceOf(NotFoundError);
+  }
+
+  done();
+});
+
+test("sync dir recursively", async done => {
+  await synchronizer.synchronizeDirectory("/folder", true);
+
+  // const localFE = await local.root.getFile("/folder/in.txt");
+  const localNestedFE = await local.root.getFile("/folder/nested/nested.txt");
+  const localNestedMeta = await localNestedFE.getMetadata();
+  const remoteParentDE = await remote.root.getDirectory("folder");
+  const remoteDE = await remoteParentDE.getDirectory("nested");
+  const remoteNestedFE = await remoteDE.getFile("nested.txt");
+  const remoteNestedMeta = await remoteNestedFE.getMetadata();
+  expect(remoteNestedMeta.size).toBe(localNestedMeta.size);
+
+  done();
+});
+
+test("remove file, sync all", async done => {
   let localFE = await local.root.getFile("empty.txt");
   await localFE.remove();
 

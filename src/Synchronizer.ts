@@ -57,7 +57,13 @@ export class Synchronizer {
     const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
 
-    await this.synchronizeBefore(dirPath);
+    await this.synchronizeSelf(
+      dirPath,
+      this.srcAccessor,
+      srcDirPathIndex,
+      this.dstAccessor,
+      dstDirPathIndex
+    );
 
     await this.synchronize(
       dirPath,
@@ -67,8 +73,6 @@ export class Synchronizer {
       this.dstAccessor,
       dstDirPathIndex
     );
-
-    await this.synchronizeAfter(dirPath);
 
     await this.srcAccessor.putDirPathIndex(srcDirPathIndex);
     await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
@@ -103,12 +107,12 @@ export class Synchronizer {
     }
   }
 
-  private async getIndex(
+  private async getDirPathIndex(
     accessor: AbstractAccessor,
-    fullPath: string
-  ): Promise<[FileNameIndex, string, string]> {
-    const parentPath = getParentPath(fullPath);
-    const name = getName(fullPath);
+    dirPath: string
+  ): Promise<[FileNameIndex, string]> {
+    const parentPath = getParentPath(dirPath);
+    const name = getName(dirPath);
     try {
       var fileNameIndex = await accessor.getFileNameIndex(parentPath);
     } catch (e) {
@@ -118,7 +122,7 @@ export class Synchronizer {
         throw e;
       }
     }
-    return [fileNameIndex, parentPath, name];
+    return [fileNameIndex, name];
   }
 
   private async synchronize(
@@ -199,84 +203,6 @@ export class Synchronizer {
         fromFileNameIndex,
         toName
       );
-    }
-  }
-
-  private async synchronizeAfter(dirPath: string) {
-    if (dirPath === DIR_SEPARATOR) {
-      return;
-    }
-
-    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
-      this.srcAccessor,
-      dirPath
-    );
-    const srcRecord = srcFileNameIndex[name];
-    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
-    const dstRecord = dstFileNameIndex[name];
-
-    if (
-      (srcRecord.deleted != null && dstRecord.deleted == null) ||
-      srcRecord.deleted < dstRecord.deleted
-    ) {
-      this.debug(null, this.dstAccessor, "delete", dirPath);
-      this.dstAccessor.delete(dirPath, false);
-      dstFileNameIndex[name] = { ...srcRecord };
-      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
-    } else if (
-      (dstRecord.deleted != null && srcRecord.deleted == null) ||
-      dstRecord.deleted < srcRecord.deleted
-    ) {
-      this.debug(null, this.srcAccessor, "delete", dirPath);
-      this.srcAccessor.delete(dirPath, true);
-      srcFileNameIndex[name] = { ...dstRecord };
-      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
-    }
-  }
-
-  private async synchronizeBefore(dirPath: string) {
-    if (dirPath === DIR_SEPARATOR) {
-      return;
-    }
-
-    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
-      this.srcAccessor,
-      dirPath
-    );
-    const srcRecord = srcFileNameIndex[name];
-    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
-    const dstRecord = dstFileNameIndex[name];
-
-    if (!srcRecord && dstRecord) {
-      const srcObj = { ...dstRecord.obj };
-      if (dstRecord.deleted == null) {
-        this.debug(null, this.srcAccessor, "putObject", dirPath);
-        this.srcAccessor.putObject(srcObj);
-      }
-      srcFileNameIndex[name] = { ...dstRecord };
-      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
-    } else if (srcRecord && !dstRecord) {
-      const dstObj = { ...srcRecord.obj };
-      if (srcRecord.deleted == null) {
-        this.debug(null, this.dstAccessor, "putObject", dirPath);
-        this.dstAccessor.putObject(dstObj);
-      }
-      dstFileNameIndex[name] = { ...srcRecord };
-      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
-    } else if (srcRecord && dstRecord) {
-      if (
-        srcRecord.deleted < dstRecord.deleted ||
-        dstRecord.updated < srcRecord.updated
-      ) {
-        dstFileNameIndex[name] = { ...srcRecord };
-        this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
-      } else if (
-        dstRecord.deleted < srcRecord.deleted ||
-        srcRecord.updated < dstRecord.updated
-      ) {
-        srcFileNameIndex[name] = { ...dstRecord };
-        this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
-      }
     }
   }
 
@@ -454,5 +380,34 @@ export class Synchronizer {
         }
       }
     }
+  }
+
+  private async synchronizeSelf(
+    dirPath: string,
+    fromAccessor: AbstractAccessor,
+    fromDirPathIndex: DirPathIndex,
+    toAccessor: AbstractAccessor,
+    toDirPathIndex: DirPathIndex
+  ) {
+    if (dirPath === DIR_SEPARATOR) {
+      return;
+    }
+
+    const [fromFileNameIndex, name] = await this.getDirPathIndex(
+      fromAccessor,
+      dirPath
+    );
+    const [toFileNameIndex] = await this.getDirPathIndex(toAccessor, dirPath);
+
+    await this.synchronizeOne(
+      false,
+      toAccessor,
+      toDirPathIndex,
+      toFileNameIndex,
+      fromAccessor,
+      fromDirPathIndex,
+      fromFileNameIndex,
+      name
+    );
   }
 }
