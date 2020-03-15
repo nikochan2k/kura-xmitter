@@ -7,7 +7,9 @@ import {
   FileSystemObject,
   getName,
   getParentPath,
-  INDEX_FILE_PATH
+  INDEX_FILE_PATH,
+  NotFoundError,
+  DIR_SEPARATOR
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -76,9 +78,9 @@ export class Synchronizer {
     obj: FileSystemObject
   ) {
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
-    const blob = await fromAccessor._getContent(obj.fullPath);
-    await toAccessor._putObject(obj);
-    await toAccessor._putContent(obj.fullPath, blob);
+    const blob = await fromAccessor.getContent(obj.fullPath);
+    await toAccessor.putObject(obj);
+    await toAccessor.putContent(obj.fullPath, blob);
   }
 
   private debug(
@@ -102,11 +104,19 @@ export class Synchronizer {
   private async getIndex(
     accessor: AbstractAccessor,
     fullPath: string
-  ): Promise<[FileNameIndex, string]> {
+  ): Promise<[FileNameIndex, string, string]> {
     const parentPath = getParentPath(fullPath);
     const name = getName(fullPath);
-    const fileNameIndex = await accessor.getFileNameIndex(parentPath);
-    return [fileNameIndex, name];
+    try {
+      var fileNameIndex = await accessor.getFileNameIndex(parentPath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        fileNameIndex = {};
+      } else {
+        throw e;
+      }
+    }
+    return [fileNameIndex, parentPath, name];
   }
 
   private async synchronize(
@@ -244,7 +254,7 @@ export class Synchronizer {
           fromFileNameIndex[name] = toRecord;
         } else {
           this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor._delete(toFullPath, true);
+          await toAccessor.delete(toFullPath, true);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
@@ -253,7 +263,7 @@ export class Synchronizer {
           toFileNameIndex[name] = fromRecord;
         } else {
           this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor._delete(fromFullPath, true);
+          await fromAccessor.delete(fromFullPath, true);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
@@ -282,7 +292,7 @@ export class Synchronizer {
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted <= toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
-          await fromAccessor._putObject(toObj);
+          await fromAccessor.putObject(toObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -304,13 +314,13 @@ export class Synchronizer {
             fromDirPathIndex
           );
           this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor._delete(fromFullPath, false);
+          await toAccessor.delete(fromFullPath, false);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted <= fromUpdated) {
           this.debug(null, toAccessor, "putObject", toFullPath);
-          await toAccessor._putObject(fromObj);
+          await toAccessor.putObject(fromObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -332,7 +342,7 @@ export class Synchronizer {
             toDirPathIndex
           );
           this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor._delete(toFullPath, false);
+          await fromAccessor.delete(toFullPath, false);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
@@ -345,11 +355,11 @@ export class Synchronizer {
       } else {
         if (fromUpdated < toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
-          await fromAccessor._putObject(toObj);
+          await fromAccessor.putObject(toObj);
           fromFileNameIndex[name] = toRecord;
         } else if (toUpdated < fromUpdated) {
           this.debug(null, toAccessor, "putObject", fromFullPath);
-          await toAccessor._putObject(fromObj);
+          await toAccessor.putObject(fromObj);
           toFileNameIndex[name] = fromRecord;
         }
         if (recursive) {
@@ -367,24 +377,52 @@ export class Synchronizer {
   }
 
   private async synchronizeSelf(dirPath: string) {
-    if (dirPath === "/") {
+    if (dirPath === DIR_SEPARATOR) {
       return;
     }
 
-    const [srcFileNameIndex, name] = await this.getIndex(
+    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
       this.srcAccessor,
       dirPath
     );
     const srcRecord = srcFileNameIndex[name];
-    const srcObj = srcRecord.obj;
     const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
     const dstRecord = dstFileNameIndex[name];
-    if (dstRecord == null) {
-      await this.copyFile(this.srcAccessor, this.dstAccessor, srcObj);
-      dstFileNameIndex[name] = srcRecord;
-    } else if (srcRecord.updated < dstRecord.deleted) {
-      this.debug(null, this.srcAccessor, "delete", srcRecord.obj.fullPath);
-      await this.srcAccessor._delete(srcRecord.obj.fullPath, false); // TODO  recurcively
+
+    if (!srcRecord && dstRecord) {
+      const srcObj = { ...dstRecord.obj };
+      if (dstRecord.deleted == null) {
+        this.debug(null, this.srcAccessor, "putObject", dirPath);
+        this.srcAccessor.putObject(srcObj);
+      }
+      srcFileNameIndex[name] = { ...dstRecord };
+      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
+    } else if (srcRecord && !dstRecord) {
+      const dstObj = { ...srcRecord.obj };
+      if (srcRecord.deleted == null) {
+        this.debug(null, this.dstAccessor, "putObject", dirPath);
+        this.dstAccessor.putObject(dstObj);
+      }
+      dstFileNameIndex[name] = { ...srcRecord };
+      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
+    } else if (srcRecord && dstRecord) {
+      if (
+        (srcRecord.deleted != null && dstRecord.deleted == null) ||
+        srcRecord.deleted < dstRecord.deleted ||
+        dstRecord.updated < srcRecord.updated
+      ) {
+        this.dstAccessor.deleteRecursively(dirPath);
+        dstFileNameIndex[name] = { ...srcRecord };
+        this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
+      } else if (
+        (dstRecord.deleted != null && srcRecord.deleted == null) ||
+        dstRecord.deleted < srcRecord.deleted ||
+        srcRecord.updated < dstRecord.updated
+      ) {
+        this.srcAccessor.deleteRecursively(dirPath);
+        srcFileNameIndex[name] = { ...dstRecord };
+        this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
+      }
     }
   }
 }
