@@ -15,8 +15,8 @@ import { SyncOptions } from "./SyncOptions";
 
 export class Synchronizer {
   private dstAccessor: AbstractAccessor;
-  private srcAccessor: AbstractAccessor;
   private excludeFileNameRegExp: RegExp;
+  private srcAccessor: AbstractAccessor;
 
   constructor(
     public src: FileSystemAsync,
@@ -57,7 +57,7 @@ export class Synchronizer {
     const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
 
-    await this.synchronizeSelf(dirPath);
+    await this.synchronizeBefore(dirPath);
 
     await this.synchronize(
       dirPath,
@@ -67,6 +67,8 @@ export class Synchronizer {
       this.dstAccessor,
       dstDirPathIndex
     );
+
+    await this.synchronizeAfter(dirPath);
 
     await this.srcAccessor.putDirPathIndex(srcDirPathIndex);
     await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
@@ -197,6 +199,84 @@ export class Synchronizer {
         fromFileNameIndex,
         toName
       );
+    }
+  }
+
+  private async synchronizeAfter(dirPath: string) {
+    if (dirPath === DIR_SEPARATOR) {
+      return;
+    }
+
+    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
+      this.srcAccessor,
+      dirPath
+    );
+    const srcRecord = srcFileNameIndex[name];
+    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
+    const dstRecord = dstFileNameIndex[name];
+
+    if (
+      (srcRecord.deleted != null && dstRecord.deleted == null) ||
+      srcRecord.deleted < dstRecord.deleted
+    ) {
+      this.debug(null, this.dstAccessor, "delete", dirPath);
+      this.dstAccessor.delete(dirPath, false);
+      dstFileNameIndex[name] = { ...srcRecord };
+      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
+    } else if (
+      (dstRecord.deleted != null && srcRecord.deleted == null) ||
+      dstRecord.deleted < srcRecord.deleted
+    ) {
+      this.debug(null, this.srcAccessor, "delete", dirPath);
+      this.srcAccessor.delete(dirPath, true);
+      srcFileNameIndex[name] = { ...dstRecord };
+      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
+    }
+  }
+
+  private async synchronizeBefore(dirPath: string) {
+    if (dirPath === DIR_SEPARATOR) {
+      return;
+    }
+
+    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
+      this.srcAccessor,
+      dirPath
+    );
+    const srcRecord = srcFileNameIndex[name];
+    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
+    const dstRecord = dstFileNameIndex[name];
+
+    if (!srcRecord && dstRecord) {
+      const srcObj = { ...dstRecord.obj };
+      if (dstRecord.deleted == null) {
+        this.debug(null, this.srcAccessor, "putObject", dirPath);
+        this.srcAccessor.putObject(srcObj);
+      }
+      srcFileNameIndex[name] = { ...dstRecord };
+      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
+    } else if (srcRecord && !dstRecord) {
+      const dstObj = { ...srcRecord.obj };
+      if (srcRecord.deleted == null) {
+        this.debug(null, this.dstAccessor, "putObject", dirPath);
+        this.dstAccessor.putObject(dstObj);
+      }
+      dstFileNameIndex[name] = { ...srcRecord };
+      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
+    } else if (srcRecord && dstRecord) {
+      if (
+        srcRecord.deleted < dstRecord.deleted ||
+        dstRecord.updated < srcRecord.updated
+      ) {
+        dstFileNameIndex[name] = { ...srcRecord };
+        this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
+      } else if (
+        dstRecord.deleted < srcRecord.deleted ||
+        srcRecord.updated < dstRecord.updated
+      ) {
+        srcFileNameIndex[name] = { ...dstRecord };
+        this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
+      }
     }
   }
 
@@ -372,56 +452,6 @@ export class Synchronizer {
             toDirPathIndex
           );
         }
-      }
-    }
-  }
-
-  private async synchronizeSelf(dirPath: string) {
-    if (dirPath === DIR_SEPARATOR) {
-      return;
-    }
-
-    const [srcFileNameIndex, parentPath, name] = await this.getIndex(
-      this.srcAccessor,
-      dirPath
-    );
-    const srcRecord = srcFileNameIndex[name];
-    const [dstFileNameIndex] = await this.getIndex(this.dstAccessor, dirPath);
-    const dstRecord = dstFileNameIndex[name];
-
-    if (!srcRecord && dstRecord) {
-      const srcObj = { ...dstRecord.obj };
-      if (dstRecord.deleted == null) {
-        this.debug(null, this.srcAccessor, "putObject", dirPath);
-        this.srcAccessor.putObject(srcObj);
-      }
-      srcFileNameIndex[name] = { ...dstRecord };
-      this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
-    } else if (srcRecord && !dstRecord) {
-      const dstObj = { ...srcRecord.obj };
-      if (srcRecord.deleted == null) {
-        this.debug(null, this.dstAccessor, "putObject", dirPath);
-        this.dstAccessor.putObject(dstObj);
-      }
-      dstFileNameIndex[name] = { ...srcRecord };
-      this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
-    } else if (srcRecord && dstRecord) {
-      if (
-        (srcRecord.deleted != null && dstRecord.deleted == null) ||
-        srcRecord.deleted < dstRecord.deleted ||
-        dstRecord.updated < srcRecord.updated
-      ) {
-        this.dstAccessor.deleteRecursively(dirPath);
-        dstFileNameIndex[name] = { ...srcRecord };
-        this.dstAccessor.putFileNameIndex(parentPath, dstFileNameIndex);
-      } else if (
-        (dstRecord.deleted != null && srcRecord.deleted == null) ||
-        dstRecord.deleted < srcRecord.deleted ||
-        srcRecord.updated < dstRecord.updated
-      ) {
-        this.srcAccessor.deleteRecursively(dirPath);
-        srcFileNameIndex[name] = { ...dstRecord };
-        this.srcAccessor.putFileNameIndex(parentPath, srcFileNameIndex);
       }
     }
   }
