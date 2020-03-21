@@ -84,9 +84,9 @@ export class Synchronizer {
     obj: FileSystemObject
   ) {
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
-    const blob = await fromAccessor.getContent(obj.fullPath);
-    await toAccessor.putObject(obj);
-    await toAccessor.putContent(obj.fullPath, blob);
+    const blob = await fromAccessor.doGetContent(obj.fullPath);
+    await toAccessor.doPutObject(obj);
+    await toAccessor.doPutContent(obj.fullPath, blob);
   }
 
   private debug(
@@ -260,7 +260,7 @@ export class Synchronizer {
           fromFileNameIndex[name] = toRecord;
         } else {
           this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor.delete(toFullPath, true);
+          await toAccessor.doDelete(toFullPath, true);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
@@ -269,7 +269,7 @@ export class Synchronizer {
           toFileNameIndex[name] = fromRecord;
         } else {
           this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor.delete(fromFullPath, true);
+          await fromAccessor.doDelete(fromFullPath, true);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
@@ -298,7 +298,7 @@ export class Synchronizer {
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted <= toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
-          await fromAccessor.putObject(toObj);
+          await fromAccessor.doPutObject(toObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -321,13 +321,13 @@ export class Synchronizer {
             fromDirPathIndex
           );
           this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor.delete(fromFullPath, false);
+          await toAccessor.doDelete(fromFullPath, false);
           toFileNameIndex[name] = fromRecord;
         }
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted <= fromUpdated) {
           this.debug(null, toAccessor, "putObject", toFullPath);
-          await toAccessor.putObject(fromObj);
+          await toAccessor.doPutObject(fromObj);
           if (recursive) {
             await this.synchronize(
               toFullPath,
@@ -350,7 +350,7 @@ export class Synchronizer {
             toDirPathIndex
           );
           this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor.delete(toFullPath, false);
+          await fromAccessor.doDelete(toFullPath, false);
           fromFileNameIndex[name] = toRecord;
         }
       } else if (fromDeleted != null && toDeleted != null) {
