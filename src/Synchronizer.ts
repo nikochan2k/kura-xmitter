@@ -78,24 +78,6 @@ export class Synchronizer {
     await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
   }
 
-  private async getObject(accessor: AbstractAccessor, obj: FileSystemObject) {
-    try {
-      return await accessor.doGetObject(obj.fullPath);
-    } catch (e) {
-      if (e instanceof NotFoundError) {
-        console.warn(e, obj);
-        if (obj.size != null) {
-          await accessor.delete(obj.fullPath, true);
-        } else {
-          await accessor.deleteRecursively(obj.fullPath);
-        }
-        return null;
-      } else {
-        throw e;
-      }
-    }
-  }
-
   private async copyFile(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
@@ -133,6 +115,18 @@ export class Synchronizer {
     } else {
       console.log(`${toAccessor.name} - ${title}: ${path}`);
     }
+  }
+
+  private warn(
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    path: string,
+    e: any
+  ) {
+    if (!this.options.verbose) {
+      return;
+    }
+    console.warn(`${fromAccessor.name} => ${toAccessor.name}: ${path}\n${e}`);
   }
 
   private async getDirPathIndex(
@@ -280,85 +274,134 @@ export class Synchronizer {
       throw new Error("source is file and destination is directory");
     }
 
-    if (fromObj.size != null) {
-      // file
-      if (fromDeleted != null && toDeleted == null) {
-        if (fromDeleted <= toUpdated) {
-          await this.copyFile(toAccessor, fromAccessor, toObj);
-          fromFileNameIndex[name] = toRecord;
-        } else {
-          this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor.doDelete(toFullPath, true);
-          toFileNameIndex[name] = fromRecord;
-        }
-      } else if (fromDeleted == null && toDeleted != null) {
-        if (toDeleted <= fromUpdated) {
-          await this.copyFile(fromAccessor, toAccessor, fromObj);
-          toFileNameIndex[name] = fromRecord;
-        } else {
-          this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor.doDelete(fromFullPath, true);
-          fromFileNameIndex[name] = toRecord;
-        }
-      } else if (fromDeleted != null && toDeleted != null) {
-        // prioritize old
-        if (fromDeleted < toDeleted) {
-          toFileNameIndex[name] = fromRecord;
-        } else if (toDeleted < fromDeleted) {
-          fromFileNameIndex[name] = toRecord;
-        }
-      } else {
-        if (toUpdated < fromUpdated) {
-          await this.copyFile(fromAccessor, toAccessor, fromObj);
-          toFileNameIndex[name] = fromRecord;
-        } else if (fromUpdated < toUpdated) {
-          await this.copyFile(toAccessor, fromAccessor, toObj);
-          fromFileNameIndex[name] = toRecord;
-        } else {
-          if (fromObj.size !== toObj.size) {
-            await this.copyFile(fromAccessor, toAccessor, fromObj);
+    try {
+      if (fromObj.size != null) {
+        // file
+        if (fromDeleted != null && toDeleted == null) {
+          if (fromDeleted <= toUpdated) {
+            await this.copyFile(toAccessor, fromAccessor, toObj);
+            fromFileNameIndex[name] = toRecord;
+          } else {
+            this.debug(null, toAccessor, "delete", toFullPath);
+            await toAccessor.doDelete(toFullPath, true);
             toFileNameIndex[name] = fromRecord;
           }
+        } else if (fromDeleted == null && toDeleted != null) {
+          if (toDeleted <= fromUpdated) {
+            await this.copyFile(fromAccessor, toAccessor, fromObj);
+            toFileNameIndex[name] = fromRecord;
+          } else {
+            this.debug(null, fromAccessor, "delete", fromFullPath);
+            await fromAccessor.doDelete(fromFullPath, true);
+            fromFileNameIndex[name] = toRecord;
+          }
+        } else if (fromDeleted != null && toDeleted != null) {
+          // prioritize old
+          if (fromDeleted < toDeleted) {
+            toFileNameIndex[name] = fromRecord;
+          } else if (toDeleted < fromDeleted) {
+            fromFileNameIndex[name] = toRecord;
+          }
+        } else {
+          if (toUpdated < fromUpdated) {
+            await this.copyFile(fromAccessor, toAccessor, fromObj);
+            toFileNameIndex[name] = fromRecord;
+          } else if (fromUpdated < toUpdated) {
+            await this.copyFile(toAccessor, fromAccessor, toObj);
+            fromFileNameIndex[name] = toRecord;
+          } else {
+            if (fromObj.size !== toObj.size) {
+              await this.copyFile(fromAccessor, toAccessor, fromObj);
+              toFileNameIndex[name] = fromRecord;
+            }
+          }
         }
-      }
-    } else {
-      // directory
-      if (fromDeleted != null && toDeleted == null) {
-        if (fromDeleted <= toUpdated) {
-          this.debug(null, fromAccessor, "putObject", toFullPath);
-          await fromAccessor.doPutObject(toObj);
-          if (recursive) {
+      } else {
+        // directory
+        if (fromDeleted != null && toDeleted == null) {
+          if (fromDeleted <= toUpdated) {
+            this.debug(null, fromAccessor, "putObject", toFullPath);
+            await fromAccessor.doPutObject(toObj);
+            if (recursive) {
+              await this.synchronize(
+                toFullPath,
+                recursive,
+                toAccessor,
+                toDirPathIndex,
+                fromAccessor,
+                fromDirPathIndex
+              );
+            }
+            fromFileNameIndex[name] = toRecord;
+          } else {
+            // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
-              recursive,
+              true,
               toAccessor,
               toDirPathIndex,
               fromAccessor,
               fromDirPathIndex
             );
+            this.debug(null, toAccessor, "delete", toFullPath);
+            await toAccessor.doDelete(fromFullPath, false);
+            toFileNameIndex[name] = fromRecord;
           }
-          fromFileNameIndex[name] = toRecord;
-        } else {
-          // force synchronize recursively if delete directory
-          await this.synchronize(
-            toFullPath,
-            true,
-            toAccessor,
-            toDirPathIndex,
-            fromAccessor,
-            fromDirPathIndex
-          );
-          this.debug(null, toAccessor, "delete", toFullPath);
-          await toAccessor.doDelete(fromFullPath, false);
-          toFileNameIndex[name] = fromRecord;
-        }
-      } else if (fromDeleted == null && toDeleted != null) {
-        if (toDeleted <= fromUpdated) {
-          this.debug(null, toAccessor, "putObject", toFullPath);
-          await toAccessor.doPutObject(fromObj);
-          if (recursive) {
+        } else if (fromDeleted == null && toDeleted != null) {
+          if (toDeleted <= fromUpdated) {
+            this.debug(null, toAccessor, "putObject", toFullPath);
+            await toAccessor.doPutObject(fromObj);
+            if (recursive) {
+              await this.synchronize(
+                toFullPath,
+                recursive,
+                fromAccessor,
+                fromDirPathIndex,
+                toAccessor,
+                toDirPathIndex
+              );
+            }
+            toFileNameIndex[name] = fromRecord;
+          } else {
+            // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
+              true,
+              fromAccessor,
+              fromDirPathIndex,
+              toAccessor,
+              toDirPathIndex
+            );
+            this.debug(null, fromAccessor, "delete", fromFullPath);
+            await fromAccessor.doDelete(toFullPath, false);
+            fromFileNameIndex[name] = toRecord;
+          }
+        } else if (fromDeleted != null && toDeleted != null) {
+          // prioritize old
+          if (fromDeleted < toDeleted) {
+            toFileNameIndex[name] = fromRecord;
+          } else if (toDeleted < fromDeleted) {
+            fromFileNameIndex[name] = toRecord;
+          }
+        } else {
+          if (fromUpdated < toUpdated) {
+            this.debug(null, fromAccessor, "putObject", toFullPath);
+            fromFileNameIndex[name] = toRecord;
+          } else if (toUpdated < fromUpdated) {
+            this.debug(null, toAccessor, "putObject", fromFullPath);
+            toFileNameIndex[name] = fromRecord;
+          }
+
+          // Directory is not found
+          if (toRecord.updated === 0) {
+            await toAccessor.doPutObject(fromObj);
+          } else if (fromRecord.updated === 0) {
+            await fromAccessor.doPutObject(toObj);
+          }
+
+          if (recursive) {
+            await this.synchronize(
+              fromFullPath,
               recursive,
               fromAccessor,
               fromDirPathIndex,
@@ -366,55 +409,10 @@ export class Synchronizer {
               toDirPathIndex
             );
           }
-          toFileNameIndex[name] = fromRecord;
-        } else {
-          // force synchronize recursively if delete directory
-          await this.synchronize(
-            toFullPath,
-            true,
-            fromAccessor,
-            fromDirPathIndex,
-            toAccessor,
-            toDirPathIndex
-          );
-          this.debug(null, fromAccessor, "delete", fromFullPath);
-          await fromAccessor.doDelete(toFullPath, false);
-          fromFileNameIndex[name] = toRecord;
-        }
-      } else if (fromDeleted != null && toDeleted != null) {
-        // prioritize old
-        if (fromDeleted < toDeleted) {
-          toFileNameIndex[name] = fromRecord;
-        } else if (toDeleted < fromDeleted) {
-          fromFileNameIndex[name] = toRecord;
-        }
-      } else {
-        if (fromUpdated < toUpdated) {
-          this.debug(null, fromAccessor, "putObject", toFullPath);
-          fromFileNameIndex[name] = toRecord;
-        } else if (toUpdated < fromUpdated) {
-          this.debug(null, toAccessor, "putObject", fromFullPath);
-          toFileNameIndex[name] = fromRecord;
-        }
-
-        // Directory is not found
-        if (toRecord.updated === 0) {
-          await toAccessor.doPutObject(fromObj);
-        } else if (fromRecord.updated === 0) {
-          await fromAccessor.doPutObject(toObj);
-        }
-
-        if (recursive) {
-          await this.synchronize(
-            fromFullPath,
-            recursive,
-            fromAccessor,
-            fromDirPathIndex,
-            toAccessor,
-            toDirPathIndex
-          );
         }
       }
+    } catch (e) {
+      this.warn(fromAccessor, toAccessor, fromObj.fullPath, e);
     }
   }
 
