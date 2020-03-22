@@ -2291,6 +2291,11 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
+kura-node@^0.0.24:
+  version "0.0.24"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.0.24.tgz#a0a386752286baf590c12276d2eb85c487bccc45"
+  integrity sha512-p3+ndOrTNIDn9RQTtMNfJAH8COzzQNzVCmsdEVHfD+iGfZjL+RHLwa+kGPhzQ70H/8k5St/B471+qNhMWbFj7w==
+
 kura-s3@^0.1.30:
   version "0.1.30"
   resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.1.30.tgz#cdc243aca32875a98bdc4bd36cdaed23ecd7ec6f"
