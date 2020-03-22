@@ -78,15 +78,43 @@ export class Synchronizer {
     await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
   }
 
+  private async getObject(accessor: AbstractAccessor, obj: FileSystemObject) {
+    try {
+      return await accessor.doGetObject(obj.fullPath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        console.warn(e, obj);
+        if (obj.size != null) {
+          await accessor.delete(obj.fullPath, true);
+        } else {
+          await accessor.deleteRecursively(obj.fullPath);
+        }
+        return null;
+      } else {
+        throw e;
+      }
+    }
+  }
+
   private async copyFile(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
   ) {
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
-    const blob = await fromAccessor.doGetContent(obj.fullPath);
-    await toAccessor.doPutObject(obj);
-    await toAccessor.doPutContent(obj.fullPath, blob);
+    try {
+      const blob = await fromAccessor.doGetContent(obj.fullPath);
+      await toAccessor.doPutObject(obj);
+      await toAccessor.doPutContent(obj.fullPath, blob);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        console.error(e, obj);
+        await fromAccessor.delete(obj.fullPath, true);
+        await toAccessor.delete(obj.fullPath, true);
+      } else {
+        throw e;
+      }
+    }
   }
 
   private debug(
@@ -298,6 +326,10 @@ export class Synchronizer {
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted <= toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
+          toObj = await this.getObject(toAccessor, toObj);
+          if (!toObj) {
+            return;
+          }
           await fromAccessor.doPutObject(toObj);
           if (recursive) {
             await this.synchronize(
@@ -327,6 +359,10 @@ export class Synchronizer {
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted <= fromUpdated) {
           this.debug(null, toAccessor, "putObject", toFullPath);
+          fromObj = await this.getObject(fromAccessor, fromObj);
+          if (!fromObj) {
+            return;
+          }
           await toAccessor.doPutObject(fromObj);
           if (recursive) {
             await this.synchronize(
