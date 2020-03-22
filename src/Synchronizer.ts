@@ -326,10 +326,6 @@ export class Synchronizer {
       if (fromDeleted != null && toDeleted == null) {
         if (fromDeleted <= toUpdated) {
           this.debug(null, fromAccessor, "putObject", toFullPath);
-          toObj = await this.getObject(toAccessor, toObj);
-          if (!toObj) {
-            return;
-          }
           await fromAccessor.doPutObject(toObj);
           if (recursive) {
             await this.synchronize(
@@ -359,10 +355,6 @@ export class Synchronizer {
       } else if (fromDeleted == null && toDeleted != null) {
         if (toDeleted <= fromUpdated) {
           this.debug(null, toAccessor, "putObject", toFullPath);
-          fromObj = await this.getObject(fromAccessor, fromObj);
-          if (!fromObj) {
-            return;
-          }
           await toAccessor.doPutObject(fromObj);
           if (recursive) {
             await this.synchronize(
@@ -404,6 +396,14 @@ export class Synchronizer {
           this.debug(null, toAccessor, "putObject", fromFullPath);
           toFileNameIndex[name] = fromRecord;
         }
+
+        // Directory is not found
+        if (toRecord.updated === 0) {
+          await toAccessor.doPutObject(fromObj);
+        } else if (fromRecord.updated === 0) {
+          await fromAccessor.doPutObject(toObj);
+        }
+
         if (recursive) {
           await this.synchronize(
             fromFullPath,
