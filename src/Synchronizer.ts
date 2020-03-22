@@ -174,7 +174,7 @@ export class Synchronizer {
           srcName
         );
 
-        toNames.splice(i);
+        toNames.splice(i, 1);
         continue outer;
       }
 
