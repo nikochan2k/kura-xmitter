@@ -1,18 +1,11 @@
 import { S3 } from "aws-sdk";
 import { rmdirSync, statSync } from "fs";
-import {
-  AbstractAccessor,
-  DIR_SEPARATOR,
-  FileSystemAsync,
-  NotFoundError
-} from "kura";
+import { DIR_SEPARATOR, FileSystemAsync, NotFoundError } from "kura";
 import { NodeLocalFileSystemAsync } from "kura-node";
 import { S3LocalFileSystemAsync } from "kura-s3";
 import { tmpdir } from "os";
 import { normalize } from "path";
 import { Synchronizer } from "../Synchronizer";
-
-AbstractAccessor.PUT_INDEX_THROTTLE = 0;
 
 let local: FileSystemAsync;
 let remote: FileSystemAsync;
@@ -26,7 +19,8 @@ beforeAll(async () => {
     rmdirSync(rootDir, { recursive: true });
   } catch {}
   const nodeLocalFileSystem = new NodeLocalFileSystemAsync(rootDir, {
-    useIndex: true
+    useIndex: true,
+    indexWriteDelayMillis: 0
   });
   local = await nodeLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -55,7 +49,7 @@ beforeAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    { useIndex: true }
+    { useIndex: true, indexWriteDelayMillis: 0 }
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
