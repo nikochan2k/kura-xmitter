@@ -4,7 +4,7 @@ import {
   AbstractAccessor,
   DIR_SEPARATOR,
   FileSystemAsync,
-  NotFoundError
+  NotFoundError,
 } from "kura";
 import { NodeLocalFileSystemAsync } from "kura-node";
 import { S3LocalFileSystemAsync } from "kura-s3";
@@ -25,7 +25,7 @@ beforeAll(async () => {
   } catch {}
   const nodeLocalFileSystem = new NodeLocalFileSystemAsync(rootDir, {
     useIndex: true,
-    indexWriteDelayMillis: 0
+    indexWriteDelayMillis: 0,
   });
   local = await nodeLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -33,11 +33,11 @@ beforeAll(async () => {
   );
 
   const options: S3.ClientConfiguration = {
-    accessKeyId: "KFS0LZVKZ8G456A502L3",
-    secretAccessKey: "uVwBONMdTwJI1+C8jUhrypvshHz3OY8Ooar3amdC",
+    accessKeyId: "minioadmin",
+    secretAccessKey: "minioadmin",
     endpoint: "http://127.0.0.1:9000",
     s3ForcePathStyle: true, // needed with minio?
-    signatureVersion: "v4"
+    signatureVersion: "v4",
   };
 
   const s3 = new S3(options);
@@ -64,10 +64,10 @@ beforeAll(async () => {
   synchronizer = new Synchronizer(local, remote, { verbose: true });
 });
 
-test("add a empty file, sync all", async done => {
+test("add a empty file, sync all", async (done) => {
   let remoteFE = await remote.root.getFile("empty.txt", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   await synchronizer.synchronizeAll();
 
@@ -87,10 +87,10 @@ test("add a empty file, sync all", async done => {
   done();
 });
 
-test("add a text file, sync all", async done => {
+test("add a text file, sync all", async (done) => {
   let remoteFE = await remote.root.getFile("test.txt", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   const writer = await remoteFE.createWriter();
   await writer.writeFile(new Blob(["hoge"], { type: "text/plain" }));
@@ -101,7 +101,7 @@ test("add a text file, sync all", async done => {
   const localEntries = await localReader.readEntries();
   expect(localEntries.length).toBe(2);
 
-  let entries = localEntries.filter(le => {
+  let entries = localEntries.filter((le) => {
     return le.name === "empty.txt";
   });
   expect(entries.length).toBe(1);
@@ -110,7 +110,7 @@ test("add a text file, sync all", async done => {
   const emptyTxtMeta = await emptyTxt.getMetadata();
   expect(emptyTxtMeta.size).toBe(0);
 
-  entries = localEntries.filter(le => {
+  entries = localEntries.filter((le) => {
     return le.name === "test.txt";
   });
   expect(entries.length).toBe(1);
@@ -124,10 +124,10 @@ test("add a text file, sync all", async done => {
   done();
 });
 
-test("add a hidden file, sync all", async done => {
+test("add a hidden file, sync all", async (done) => {
   await remote.root.getFile(".hidden", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
 
   await synchronizer.synchronizeAll();
@@ -139,14 +139,14 @@ test("add a hidden file, sync all", async done => {
   done();
 });
 
-test("create folder, and add a text file, sync all", async done => {
+test("create folder, and add a text file, sync all", async (done) => {
   let remoteDE = await remote.root.getDirectory("folder", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   let remoteFE = await remoteDE.getFile("in.txt", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   const writer = await remoteFE.createWriter();
   await writer.writeFile(new Blob(["hoge"], { type: "text/plain" }));
@@ -162,22 +162,22 @@ test("create folder, and add a text file, sync all", async done => {
   done();
 });
 
-test("create nested folder, and add a empty file, sync dir", async done => {
+test("create nested folder, and add a empty file, sync dir", async (done) => {
   const remoteParentDE = await remote.root.getDirectory("folder");
   const remoteFE = await remoteParentDE.getFile("fuga.txt", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   let writer = await remoteFE.createWriter();
   await writer.writeFile(new Blob(["fuga"], { type: "text/plain" }));
 
   const remoteDE = await remoteParentDE.getDirectory("nested", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   const nestedFE = await remoteDE.getFile("nested.txt", {
     create: true,
-    exclusive: true
+    exclusive: true,
   });
   writer = await nestedFE.createWriter();
   await writer.writeFile(new Blob(["nested"], { type: "text/plain" }));
@@ -200,7 +200,7 @@ test("create nested folder, and add a empty file, sync dir", async done => {
   done();
 });
 
-test("sync dir recursively", async done => {
+test("sync dir recursively", async (done) => {
   await synchronizer.synchronizeDirectory("/folder", true);
 
   const remoteNestedFE = await remote.root.getFile("/folder/nested/nested.txt");
@@ -214,7 +214,7 @@ test("sync dir recursively", async done => {
   done();
 });
 
-test("remove file, sync all", async done => {
+test("remove file, sync all", async (done) => {
   let remoteFE = await remote.root.getFile("empty.txt");
   await remoteFE.remove();
 

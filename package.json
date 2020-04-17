@@ -47,26 +47,26 @@
       }
     },
     "testMatch": [
-      "**/src/__tests__/*.spec.+(ts|tsx|js)"
+      "<rootDir>/src/__tests__/*.spec.+(ts|tsx|js)"
     ],
     "preset": "ts-jest"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
-    "@types/node": "^13.11.0",
-    "aws-sdk": "^2.653.0",
+    "@types/node": "^13.11.1",
+    "aws-sdk": "^2.657.0",
     "fake-indexeddb": "^3.0.0",
-    "jest": "^25.2.7",
-    "kura": "^0.1.143",
-    "kura-node": "^0.0.26",
-    "kura-s3": "^0.1.36",
+    "jest": "^25.3.0",
+    "kura": "^0.2.11",
+    "kura-node": "^0.2.1",
+    "kura-s3": "^0.2.3",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
-    "ts-jest": "^25.3.1",
+    "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {},
   "peerDependencies": {
-    "kura": "^0.1.143"
+    "kura": "^0.2.10"
   }
 }

@@ -9,7 +9,7 @@ import {
   getParentPath,
   INDEX_FILE_PATH,
   NotFoundError,
-  DIR_SEPARATOR
+  DIR_SEPARATOR,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -85,9 +85,9 @@ export class Synchronizer {
   ) {
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
     try {
-      const blob = await fromAccessor.doGetContent(obj.fullPath);
+      const content = await fromAccessor.doGetContent(obj.fullPath);
       await toAccessor.doPutObject(obj);
-      await toAccessor.doPutContent(obj.fullPath, blob);
+      await toAccessor.doPutContent(obj.fullPath, content);
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.error(e, obj);
@@ -167,10 +167,10 @@ export class Synchronizer {
     }
 
     const fromNames = Object.keys(fromFileNameIndex).filter(
-      name => !this.excludeFileNameRegExp.test(name)
+      (name) => !this.excludeFileNameRegExp.test(name)
     );
     const toNames = Object.keys(toFileNameIndex).filter(
-      name => !this.excludeFileNameRegExp.test(name)
+      (name) => !this.excludeFileNameRegExp.test(name)
     );
     outer: while (0 < fromNames.length) {
       const srcName = fromNames.shift();
