@@ -53,8 +53,8 @@
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
-    "@types/node": "^13.11.1",
-    "aws-sdk": "^2.657.0",
+    "@types/node": "^13.13.0",
+    "aws-sdk": "^2.658.0",
     "fake-indexeddb": "^3.0.0",
     "jest": "^25.3.0",
     "kura": "^0.2.11",
@@ -67,6 +67,6 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "kura": "^0.2.10"
+    "kura": "^0.2.14"
   }
 }
