@@ -1396,11 +1396,6 @@ fast-levenshtein@~2.0.6:
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
 
-fast-text-encoding@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/fast-text-encoding/-/fast-text-encoding-1.0.1.tgz#4a428566f74fc55ebdd447555b1eb4d9cf514455"
-  integrity sha512-x4FEgaz3zNRtJfLFqJmHWxkMDDvXVtaznj2V9jiP8ACUJrUgist4bP9FmDL2Vew2Y9mEQI/tG4GqabaitYp9CQ==
-
 fb-watchman@^2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/fb-watchman/-/fb-watchman-2.0.1.tgz#fc84fb39d2709cf3ff6d743706157bb5708a8a85"
@@ -2379,23 +2374,23 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-node@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.2.tgz#32f222588be2791b69d506e9342a2879bcf83e93"
-  integrity sha512-zfp5KKFTEzYxDuKW5fjTPg2mOQvAvwkesowwNuxwrpbTrbvLOP+lntCNdpguvWAdQTqv/YLHGAcCmzP+FsINxg==
+kura-node@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.3.tgz#e687c26d6fdc0b334360a24f7281916ff29529ab"
+  integrity sha512-z/xhVOppk8j5cq7unR9rHnj91v5ZnL7DGb+M2lcWEZGnOz5MntOboqGBvPFzGbCxyc5UehpbVaGlFd+z7uk+cA==
 
-kura-s3@^0.2.5:
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.5.tgz#7715fc97f6a0a19f54dd2ac8ea6383acf5160c44"
-  integrity sha512-4CRpNjvY/v4CWz3ALIXwDmGyLLkpxsIX/GR+3yhBgVGzbHx7awKLXtIFIJhTv6pKxv0XeKWk+8v4XxzGEfkjcQ==
+kura-s3@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.6.tgz#035e1942e046e94580885b74bdc58afc929778f2"
+  integrity sha512-Qu8Hje2dMHTqG5Yx18GB5kUsJ3af1yzuZ8TrSYLnTuNqxzZWP6i/Ywpo362p1wFrPgejiaPd+ZoDfS2Ka6YQuw==
 
-kura@^0.2.18:
-  version "0.2.18"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.18.tgz#fba6503707ab640960b797c1f434d6dc250a6456"
-  integrity sha512-+iU3mVYnUCBRGcBULFu1fB2vA7B3INB/7hBZdpeq7P/jWDl/LymQzNPSpVI/9jTM0IICLIV9E18EARUsKSNO8Q==
+kura@^0.2.23:
+  version "0.2.23"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.23.tgz#6944e8a01a22d923880d05dfd2e5143fbe768cf7"
+  integrity sha512-/551spaG8TqP0QHaGf64mI8BV5LuPwluiKpdPG/mUsT0w5g6AbNvHV7ZD1Agdo60nwP7orq8U5ApZxG61jIFkQ==
   dependencies:
     base-64 "^0.1.0"
-    fast-text-encoding "^1.0.1"
+    text-encoding-shim "^1.0.5"
 
 leven@^3.1.0:
   version "3.1.0"
@@ -3495,6 +3490,11 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
+
+text-encoding-shim@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/text-encoding-shim/-/text-encoding-shim-1.0.5.tgz#dfd9cde8dbbffe0c52be2fc277a6a65c66d23e41"
+  integrity sha512-H7yYW+jRn4yhu60ygZ2f/eMhXPITRt4QSUTKzLm+eCaDsdX8avmgWpmtmHAzesjBVUTAypz9odu5RKUjX5HNYA==
 
 throat@^5.0.0:
   version "5.0.0"

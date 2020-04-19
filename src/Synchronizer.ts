@@ -126,7 +126,10 @@ export class Synchronizer {
     if (!this.options.verbose) {
       return;
     }
-    console.warn(`${fromAccessor.name} => ${toAccessor.name}: ${path}\n${e}`);
+    console.warn(
+      `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` +
+        JSON.stringify(e)
+    );
   }
 
   private async getDirPathIndex(
