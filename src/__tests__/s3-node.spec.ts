@@ -1,11 +1,6 @@
 import { S3 } from "aws-sdk";
 import { rmdirSync, statSync } from "fs";
-import {
-  AbstractAccessor,
-  DIR_SEPARATOR,
-  FileSystemAsync,
-  NotFoundError,
-} from "kura";
+import { DIR_SEPARATOR, FileSystemAsync, NotFoundError } from "kura";
 import { NodeLocalFileSystemAsync } from "kura-node";
 import { S3LocalFileSystemAsync } from "kura-s3";
 import { tmpdir } from "os";

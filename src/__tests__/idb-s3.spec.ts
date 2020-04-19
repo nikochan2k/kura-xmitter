@@ -1,11 +1,6 @@
 require("fake-indexeddb/auto");
 import { S3 } from "aws-sdk";
-import {
-  AbstractAccessor,
-  FileSystemAsync,
-  IdbLocalFileSystemAsync,
-  NotFoundError,
-} from "kura";
+import { FileSystemAsync, IdbLocalFileSystemAsync, NotFoundError } from "kura";
 import { S3LocalFileSystemAsync } from "kura-s3";
 import { Synchronizer } from "../Synchronizer";
 
