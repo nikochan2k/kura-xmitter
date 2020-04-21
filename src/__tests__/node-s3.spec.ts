@@ -49,7 +49,11 @@ beforeAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    { useIndex: true, indexWriteDelayMillis: 0 }
+    {
+      useIndex: true,
+      indexWriteDelayMillis: 0,
+      methodOfDoPutContent: "xhr",
+    }
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
