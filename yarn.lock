@@ -520,10 +520,10 @@
     jest-diff "^25.2.1"
     pretty-format "^25.2.1"
 
-"@types/node@^13.13.1":
-  version "13.13.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.1.tgz#1ba94c5a177a1692518bfc7b41aec0aa1a14354e"
-  integrity sha512-uysqysLJ+As9jqI5yqjwP3QJrhOcUwBjHUlUxPxjbplwKoILvXVsmYWEhfmAQlrPfbRZmhJB007o4L9sKqtHqQ==
+"@types/node@^13.13.2":
+  version "13.13.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.2.tgz#160d82623610db590a64e8ca81784e11117e5a54"
+  integrity sha512-LB2R1Oyhpg8gu4SON/mfforE525+Hi/M1ineICEDftqNVTyFg1aRIeGuTvXAoWHc4nbrFncWtJgMmoyRvuGh7A==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -703,10 +703,10 @@ atob@^2.1.2:
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
 
-aws-sdk@^2.659.0:
-  version "2.659.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.659.0.tgz#3d14828d50e9a0fd8cd1001b8b1b469febd49302"
-  integrity sha512-gtMIHS0BL/ckq6tm6NpeJhI6+GIXI0YrDVkpbHP2lfazsno9TgRyGI/P19QOa8tWaAujgw+GustTtZCEi0LVDA==
+aws-sdk@^2.663.0:
+  version "2.663.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.663.0.tgz#003d8cc318635d1bf67deda586f5e5d583b7e384"
+  integrity sha512-xPOszNOaSXTRs8VGXaMbhTKXdlq2TlDRfFRVEGxkZrtow87hEIVZGAUSUme2e3GHqHUDnySwcufrUpUPUizOKQ==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -2402,20 +2402,20 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-node@^0.2.4:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.4.tgz#ba6effac7723caa16857ed4ca94d552121906e51"
-  integrity sha512-dKDGR+WX5k7jy4ti+K9He7OOffhnJ0znvb7D8OVPOKatvUWF2Aqe0qe/EMZx/2ktDP/F7ZZAXk1Nj5Wscj7E5Q==
+kura-node@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.5.tgz#ae08a6b0231c8297a3ffc91b89f72d5fa977e9a2"
+  integrity sha512-WmMXuK4iDPPSd/kdWg5XC5glWfjTKG4GOkm/CL+MCk9LPLwA3Jp/FSEg3U2IpOw6pGubLhcEAni2Pywmrq0uWw==
 
-kura-s3@^0.2.7:
-  version "0.2.7"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.7.tgz#b88b13b0b9f880a6b053c1cb14662ce432df6acf"
-  integrity sha512-6NKEcx+7LxlXzSb5j5Ky/VIiSU7hG5pAFAQacVFUDxi9cGubp3VIu9ry5Uz+kc+xKpLOncjkE/fgNE1Jryumgg==
+kura-s3@^0.2.9:
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.9.tgz#5c946cf18d1b6aa59812c46ddf5684d2720792bd"
+  integrity sha512-QAOqIKKarti+Oq1NyvKYvPguwa7hIA3s8rvIAq+ZA3nIW8lDVO1hkAR7/UBtt8zuONWTFLv1vNYcAKDVRTl5xg==
 
-kura@^0.2.31:
-  version "0.2.31"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.31.tgz#ea5ed339bf62b32729fa4c9975058e7e081492ed"
-  integrity sha512-xAywzlGhe1rGtTSb5B63ACkKbMsrfleCs/4NV/hB7TYkujvzY9Qa2oVcapd52DdfQCryYP8knwyeAIry2pyqhA==
+kura@^0.2.33:
+  version "0.2.33"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.33.tgz#de624b24cca2985ab999e062c0376bfc554e78fe"
+  integrity sha512-ia3OUehPnjxkvpGRVrh26JDrB2P/T415ID3WWDP/00ICBTFV24B1j+7AApUV4bbTcyvRWy3YoYWb9ma9X6VbQg==
   dependencies:
     base-64 "^0.1.0"
     text-encoding-shim "^1.0.5"
