@@ -305,6 +305,7 @@ export class Synchronizer {
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
+          this.debug(null, fromAccessor, "already deleted", fromFullPath);
           if (fromDeleted < toDeleted) {
             toFileNameIndex[name] = fromRecord;
           } else if (toDeleted < fromDeleted) {
@@ -386,6 +387,7 @@ export class Synchronizer {
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
+          this.debug(null, fromAccessor, "already deleted", fromFullPath);
           if (fromDeleted < toDeleted) {
             toFileNameIndex[name] = fromRecord;
           } else if (toDeleted < fromDeleted) {
