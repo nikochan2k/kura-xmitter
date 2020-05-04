@@ -305,7 +305,7 @@ export class Synchronizer {
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
-          this.debug(null, fromAccessor, "already deleted", fromFullPath);
+          this.debug(fromAccessor, toAccessor, "already deleted", fromFullPath);
           if (fromDeleted < toDeleted) {
             toFileNameIndex[name] = fromRecord;
           } else if (toDeleted < fromDeleted) {
@@ -387,7 +387,7 @@ export class Synchronizer {
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
-          this.debug(null, fromAccessor, "already deleted", fromFullPath);
+          this.debug(fromAccessor, toAccessor, "already deleted", fromFullPath);
           if (fromDeleted < toDeleted) {
             toFileNameIndex[name] = fromRecord;
           } else if (toDeleted < fromDeleted) {
@@ -395,17 +395,15 @@ export class Synchronizer {
           }
         } else {
           if (fromUpdated < toUpdated) {
-            this.debug(null, fromAccessor, "putObject", toFullPath);
             fromFileNameIndex[name] = toRecord;
           } else if (toUpdated < fromUpdated) {
-            this.debug(null, toAccessor, "putObject", fromFullPath);
             toFileNameIndex[name] = fromRecord;
           }
 
           // Directory is not found
-          if (toRecord.updated === 0) {
+          if (!toRecord.updated) {
             await toAccessor.doPutObject(fromObj);
-          } else if (fromRecord.updated === 0) {
+          } else if (!fromRecord.updated) {
             await fromAccessor.doPutObject(toObj);
           }
 
