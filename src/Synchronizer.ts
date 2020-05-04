@@ -2,6 +2,7 @@ import {
   AbstractAccessor,
   AbstractFileSystem,
   DirPathIndex,
+  DIR_SEPARATOR,
   FileNameIndex,
   FileSystemAsync,
   FileSystemObject,
@@ -9,7 +10,6 @@ import {
   getParentPath,
   INDEX_FILE_PATH,
   NotFoundError,
-  DIR_SEPARATOR,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -84,6 +84,11 @@ export class Synchronizer {
     obj: FileSystemObject
   ) {
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
+    const onCopy = this.options.onCopy;
+    if (onCopy) {
+      onCopy(fromAccessor.name, toAccessor.name, obj);
+    }
+
     try {
       const content = await fromAccessor.doGetContent(obj.fullPath);
       await toAccessor.doPutObject(obj);
