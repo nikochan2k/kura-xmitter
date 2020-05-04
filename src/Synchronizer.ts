@@ -181,15 +181,15 @@ export class Synchronizer {
       (name) => !this.excludeFileNameRegExp.test(name)
     );
     outer: while (0 < fromNames.length) {
-      const srcName = fromNames.shift();
-      if (!srcName) {
+      const fromName = fromNames.shift();
+      if (!fromName) {
         break;
       }
 
       // source to destination
       for (let i = 0, end = toNames.length; i < end; i++) {
-        const dstName = toNames[i];
-        if (srcName !== dstName) {
+        const toName = toNames[i];
+        if (fromName !== toName) {
           continue;
         }
 
@@ -201,7 +201,7 @@ export class Synchronizer {
           toAccessor,
           toDirPathIndex,
           toFileNameIndex,
-          srcName
+          fromName
         );
 
         toNames.splice(i, 1);
@@ -217,7 +217,7 @@ export class Synchronizer {
         toAccessor,
         toDirPathIndex,
         toFileNameIndex,
-        srcName
+        fromName
       );
     }
 
@@ -273,6 +273,10 @@ export class Synchronizer {
     const toDeleted = toRecord.deleted;
     const fromUpdated = fromRecord.updated;
     const toUpdated = toRecord.updated;
+
+    if (fromFullPath === INDEX_FILE_PATH) {
+      return;
+    }
 
     if (fromObj.size == null && toObj.size != null) {
       // TODO
@@ -443,12 +447,12 @@ export class Synchronizer {
 
     await this.synchronizeOne(
       false,
-      toAccessor,
-      toDirPathIndex,
-      toFileNameIndex,
       fromAccessor,
       fromDirPathIndex,
       fromFileNameIndex,
+      toAccessor,
+      toDirPathIndex,
+      toFileNameIndex,
       name
     );
   }
