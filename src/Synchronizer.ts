@@ -122,19 +122,8 @@ export class Synchronizer {
     }
   }
 
-  private warn(
-    fromAccessor: AbstractAccessor,
-    toAccessor: AbstractAccessor,
-    path: string,
-    e: any
-  ) {
-    if (!this.options.verbose) {
-      return;
-    }
-    console.warn(
-      `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` +
-        JSON.stringify(e)
-    );
+  private deepCopy(obj: any) {
+    return JSON.parse(JSON.stringify(obj));
   }
 
   private async getDirPathIndex(
@@ -253,13 +242,13 @@ export class Synchronizer {
     let toObj: FileSystemObject;
     if (fromRecord != null && toRecord == null) {
       fromObj = fromRecord.obj;
-      toRecord = { ...fromRecord };
+      toRecord = this.deepCopy(fromRecord);
       delete toRecord.deleted;
       toRecord.updated = 0;
       toObj = toRecord.obj;
     } else if (fromRecord == null && toRecord != null) {
       toObj = toRecord.obj;
-      fromRecord = { ...toRecord };
+      fromRecord = this.deepCopy(toRecord);
       delete fromRecord.deleted;
       fromRecord.updated = 0;
       fromObj = fromRecord.obj;
@@ -454,6 +443,21 @@ export class Synchronizer {
       toDirPathIndex,
       toFileNameIndex,
       name
+    );
+  }
+
+  private warn(
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    path: string,
+    e: any
+  ) {
+    if (!this.options.verbose) {
+      return;
+    }
+    console.warn(
+      `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` +
+        JSON.stringify(e)
     );
   }
 }
