@@ -19,8 +19,8 @@ beforeAll(async () => {
     rmdirSync(rootDir, { recursive: true });
   } catch {}
   const nodeLocalFileSystem = new NodeLocalFileSystemAsync(rootDir, {
-    useIndex: true,
-    indexWriteDelayMillis: 0,
+    index: true,
+    indexOptions: { writeDelayMillis: 0 },
   });
   local = await nodeLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -49,7 +49,7 @@ beforeAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    { useIndex: true, indexWriteDelayMillis: 0 }
+    { index: true, indexOptions: { writeDelayMillis: 0 } }
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,

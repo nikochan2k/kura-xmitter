@@ -10,7 +10,7 @@ let synchronizer: Synchronizer;
 beforeAll(async () => {
   const idbLocalFileSystem = new IdbLocalFileSystemAsync(
     "web-file-system-test",
-    { useIndex: true, indexWriteDelayMillis: 0 }
+    { index: true, indexOptions: { writeDelayMillis: 0 } }
   );
   local = await idbLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -39,7 +39,7 @@ beforeAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    { useIndex: true, indexWriteDelayMillis: 0 }
+    { index: true, indexOptions: { writeDelayMillis: 0 } }
   );
   remote = await s3LocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,

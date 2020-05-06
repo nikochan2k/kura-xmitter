@@ -32,7 +32,7 @@ export class Synchronizer {
 
     const srcFS = src.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.srcAccessor = srcFS.accessor;
-    if (!this.srcAccessor || !this.srcAccessor.options.useIndex) {
+    if (!this.srcAccessor || !this.srcAccessor.options.index) {
       throw new Error(
         `Source filesystem "${srcFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
@@ -40,7 +40,7 @@ export class Synchronizer {
 
     const dstFS = dst.filesystem as AbstractFileSystem<AbstractAccessor>;
     this.dstAccessor = dstFS.accessor;
-    if (!this.dstAccessor || !this.dstAccessor.options.useIndex) {
+    if (!this.dstAccessor || !this.dstAccessor.options.index) {
       throw new Error(
         `Destination filesystem "${dstFS.name}" has no index "${INDEX_FILE_PATH}"`
       );
