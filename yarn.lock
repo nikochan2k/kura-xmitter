@@ -2452,20 +2452,20 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-node@^0.2.10:
-  version "0.2.10"
-  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.10.tgz#55f1fa12e1aed5c8bad14006afcded05d659d88e"
-  integrity sha512-PbKp8ii1T+QQziQOMpRmU7XmXIR0qUHzJlIgGPqJrU2HUEOSkfJ5/J48JgC9nAbfcLiWtdAuMV4/0BxaSEBJhQ==
+kura-node@^0.2.11:
+  version "0.2.11"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.11.tgz#8a95bbf116542f4e0a455ca3e5c5943a293cf3ef"
+  integrity sha512-+MeCLd2FWWy1dk5r/XS0vIjo0EQsZFgKFrw0/IPX0F/irICYh/fr22uU+pec28Psp+q3csau/wG3gJfIpLHx5w==
 
-kura-s3@^0.2.15:
-  version "0.2.15"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.15.tgz#46c27d9a14cc540a401ac18856733d21c0d830ac"
-  integrity sha512-v2ZtpNVjwsvv9q86L+fh6ptrAD5ePo8zyON/zWG2njDCwyZE5dJGDtTr4oLjuN+jTJ31zKi92oNHUUPCtPCkXg==
+kura-s3@^0.2.16:
+  version "0.2.16"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.16.tgz#ecd65667f5913e5b47b670e45b622a449a4b4e86"
+  integrity sha512-cmeM7tDuXXveAxRK2d6VLJM4tzblgndkY8PbONr8fapOfXwQmTIgiNM4TKWuAQxa7QwyD6O6vY57V3uRvbyW/g==
 
-kura@^0.2.57:
-  version "0.2.57"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.57.tgz#69483e812b63b0712d70ede98b0f56b4ced5a91a"
-  integrity sha512-lzlMys98KuG3+uJ9U95/4TMRDMY3PsKLYasFsoLqe0T2YDLczpcL9TQmOYJgYmgCpnkMoqeYQkrp+IK1Ntu3WA==
+kura@^0.2.63:
+  version "0.2.63"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.63.tgz#a089ea6916e6bedc88155f761503f6665c39a3f6"
+  integrity sha512-sqS/nJVt9c1PX3BAmcr2uT/QFNsCfeQGl9OJ2q/UtO4uOeuygiKYsn5KDZGlCXXSnXfX+X2+7ALJYuFMd/4Xtw==
   dependencies:
     base-64 "^0.1.0"
     text-encoding-shim "^1.0.5"

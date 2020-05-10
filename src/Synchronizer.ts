@@ -30,7 +30,7 @@ export class Synchronizer {
     if (options.verbose == null) options.verbose = false;
     this.excludeFileNameRegExp = new RegExp(options.excludeFileNamePattern);
 
-    const srcFS = src.filesystem as AbstractFileSystem<AbstractAccessor>;
+    const srcFS = src.filesystem;
     this.srcAccessor = srcFS.accessor;
     if (!this.srcAccessor || !this.srcAccessor.options.index) {
       throw new Error(
@@ -38,7 +38,7 @@ export class Synchronizer {
       );
     }
 
-    const dstFS = dst.filesystem as AbstractFileSystem<AbstractAccessor>;
+    const dstFS = dst.filesystem;
     this.dstAccessor = dstFS.accessor;
     if (!this.dstAccessor || !this.dstAccessor.options.index) {
       throw new Error(
@@ -56,7 +56,16 @@ export class Synchronizer {
       console.log(`synchronize ${dirPath}`);
     }
 
+    this.srcAccessor.clearContentsCache(dirPath);
+    if (!this.srcAccessor.options.shared) {
+      this.srcAccessor.saveDirPathIndex();
+    }
     const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
+
+    this.dstAccessor.clearContentsCache(dirPath);
+    if (!this.dstAccessor.options.shared) {
+      this.dstAccessor.saveDirPathIndex();
+    }
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
 
     await this.synchronizeSelf(
