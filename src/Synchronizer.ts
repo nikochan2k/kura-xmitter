@@ -76,8 +76,8 @@ export class Synchronizer {
       dstDirPathIndex
     );
 
-    await this.srcAccessor.putDirPathIndex(srcDirPathIndex);
-    await this.dstAccessor.putDirPathIndex(dstDirPathIndex);
+    await this.srcAccessor.saveDirPathIndex();
+    await this.dstAccessor.saveDirPathIndex();
   }
 
   private async copyFile(
