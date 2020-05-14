@@ -51,6 +51,10 @@ export class Synchronizer {
   }
 
   async synchronizeDirectory(dirPath: string, recursive: boolean) {
+    if (!dirPath) {
+      dirPath = "/";
+    }
+
     if (this.srcAccessor.options.verbose || this.dstAccessor.options.verbose) {
       console.log(`synchronize ${dirPath}`);
     }
