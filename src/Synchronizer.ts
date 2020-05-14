@@ -1,6 +1,5 @@
 import {
   AbstractAccessor,
-  AbstractFileSystem,
   DirPathIndex,
   DIR_SEPARATOR,
   FileNameIndex,
@@ -57,14 +56,18 @@ export class Synchronizer {
     }
 
     this.srcAccessor.clearContentsCache(dirPath);
-    if (!this.srcAccessor.options.shared) {
-      this.srcAccessor.saveDirPathIndex();
+    if (this.srcAccessor.options.shared) {
+      await this.srcAccessor.loadDirPathIndex();
+    } else {
+      await this.srcAccessor.saveDirPathIndex();
     }
     const srcDirPathIndex = await this.srcAccessor.getDirPathIndex();
 
     this.dstAccessor.clearContentsCache(dirPath);
-    if (!this.dstAccessor.options.shared) {
-      this.dstAccessor.saveDirPathIndex();
+    if (this.dstAccessor.options.shared) {
+      await this.dstAccessor.loadDirPathIndex();
+    } else {
+      await this.dstAccessor.saveDirPathIndex();
     }
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
 
@@ -327,7 +330,7 @@ export class Synchronizer {
             await this.copyFile(toAccessor, fromAccessor, toObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
-            this.deleteEntry(toAccessor, toFullPath, true);
+            await this.deleteEntry(toAccessor, toFullPath, true);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
@@ -335,7 +338,7 @@ export class Synchronizer {
             await this.copyFile(fromAccessor, toAccessor, fromObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
-            this.deleteEntry(fromAccessor, fromFullPath, true);
+            await this.deleteEntry(fromAccessor, fromFullPath, true);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
@@ -386,7 +389,7 @@ export class Synchronizer {
               fromAccessor,
               fromDirPathIndex
             );
-            this.deleteEntry(toAccessor, toFullPath, false);
+            await this.deleteEntry(toAccessor, toFullPath, false);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
@@ -414,7 +417,7 @@ export class Synchronizer {
               toAccessor,
               toDirPathIndex
             );
-            this.deleteEntry(fromAccessor, fromFullPath, false);
+            await this.deleteEntry(fromAccessor, fromFullPath, false);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
