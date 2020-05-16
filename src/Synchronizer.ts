@@ -108,7 +108,7 @@ export class Synchronizer {
     }
 
     try {
-      var content = await fromAccessor.doGetContent(obj.fullPath);
+      var content = await fromAccessor.doReadContent(obj.fullPath);
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.warn(e, obj);
@@ -134,8 +134,7 @@ export class Synchronizer {
       }
     }
 
-    await toAccessor.doPutObject(obj);
-    await toAccessor.doPutContent(obj.fullPath, content);
+    await toAccessor.doWriteContent(obj.fullPath, content);
   }
 
   private debug(
@@ -371,7 +370,7 @@ export class Synchronizer {
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted <= toUpdated) {
             this.debug(null, fromAccessor, "putObject", toFullPath);
-            await fromAccessor.doPutObject(toObj);
+            await fromAccessor.doMakeDirectory(toObj);
             if (recursive) {
               await this.synchronize(
                 toFullPath,
@@ -399,7 +398,7 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
             this.debug(null, toAccessor, "putObject", toFullPath);
-            await toAccessor.doPutObject(fromObj);
+            await toAccessor.doMakeDirectory(fromObj);
             if (recursive) {
               await this.synchronize(
                 toFullPath,
@@ -440,9 +439,9 @@ export class Synchronizer {
 
           // Directory is not found
           if (!toRecord.updated) {
-            await toAccessor.doPutObject(fromObj);
+            await toAccessor.doMakeDirectory(fromObj);
           } else if (!fromRecord.updated) {
-            await fromAccessor.doPutObject(toObj);
+            await fromAccessor.doMakeDirectory(toObj);
           }
 
           if (recursive) {
