@@ -337,14 +337,14 @@ export class Synchronizer {
           if (fromDeleted <= toUpdated) {
             await this.copyFile(toAccessor, fromAccessor, toObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
+          } else {
             await this.deleteEntry(toAccessor, fromObj, toFileNameIndex);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
             await this.copyFile(fromAccessor, toAccessor, fromObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
+          } else {
             await this.deleteEntry(fromAccessor, toObj, fromFileNameIndex);
           }
         } else if (fromDeleted != null && toDeleted != null) {
@@ -385,7 +385,7 @@ export class Synchronizer {
               );
             }
             fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
+          } else {
             // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
@@ -412,7 +412,7 @@ export class Synchronizer {
               );
             }
             toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
+          } else {
             // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
