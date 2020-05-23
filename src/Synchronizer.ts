@@ -144,7 +144,11 @@ export class Synchronizer {
     return JSON.parse(JSON.stringify(obj));
   }
 
-  private async deleteEntry(accessor: AbstractAccessor, obj: FileSystemObject) {
+  private async deleteEntry(
+    accessor: AbstractAccessor,
+    obj: FileSystemObject,
+    fileNameIndex?: FileNameIndex
+  ) {
     this.debug(null, accessor, "delete", obj.fullPath);
 
     let err: any;
@@ -158,7 +162,9 @@ export class Synchronizer {
       console.debug(err, obj.fullPath);
 
       const dirPath = getParentPath(obj.fullPath);
-      const [fileNameIndex] = await this.getDirPathIndex(accessor, dirPath);
+      if (fileNameIndex == null) {
+        fileNameIndex = (await this.getDirPathIndex(accessor, dirPath))[0];
+      }
       const record = fileNameIndex[obj.name];
       const deleted = Date.now();
       if (record) {
@@ -332,16 +338,14 @@ export class Synchronizer {
             await this.copyFile(toAccessor, fromAccessor, toObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
-            await this.deleteEntry(toAccessor, toObj);
-            toFileNameIndex[name] = this.deepCopy(fromRecord);
+            await this.deleteEntry(toAccessor, fromObj, toFileNameIndex);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
             await this.copyFile(fromAccessor, toAccessor, fromObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
-            await this.deleteEntry(fromAccessor, fromObj);
-            fromFileNameIndex[name] = this.deepCopy(toRecord);
+            await this.deleteEntry(fromAccessor, toObj, fromFileNameIndex);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
@@ -391,8 +395,7 @@ export class Synchronizer {
               fromAccessor,
               fromDirPathIndex
             );
-            await this.deleteEntry(toAccessor, toObj);
-            toFileNameIndex[name] = this.deepCopy(fromRecord);
+            await this.deleteEntry(toAccessor, fromObj, toFileNameIndex);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
@@ -419,8 +422,7 @@ export class Synchronizer {
               toAccessor,
               toDirPathIndex
             );
-            await this.deleteEntry(fromAccessor, fromObj);
-            fromFileNameIndex[name] = this.deepCopy(toRecord);
+            await this.deleteEntry(fromAccessor, toObj, fromFileNameIndex);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
