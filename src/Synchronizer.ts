@@ -9,6 +9,7 @@ import {
   getParentPath,
   INDEX_FILE_PATH,
   NotFoundError,
+  Record,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -99,8 +100,9 @@ export class Synchronizer {
   private async copyFile(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
-    obj: FileSystemObject
+    fromRecord: Record
   ) {
+    const obj = fromRecord.obj;
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
     const onCopy = this.options.onCopy;
     if (onCopy) {
@@ -112,8 +114,9 @@ export class Synchronizer {
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.warn(e, obj);
-        await this.deleteEntry(fromAccessor, obj);
-        await this.deleteEntry(toAccessor, obj);
+        await this.deleteEntry(fromAccessor, obj.fullPath, true);
+        fromRecord.deleted = Date.now();
+        await this.deleteEntry(toAccessor, obj.fullPath, true);
       } else {
         throw e;
       }
@@ -146,38 +149,18 @@ export class Synchronizer {
 
   private async deleteEntry(
     accessor: AbstractAccessor,
-    obj: FileSystemObject,
-    fileNameIndex?: FileNameIndex
+    fullPath: string,
+    isFile: boolean
   ) {
-    this.debug(null, accessor, "delete", obj.fullPath);
-
-    let err: any;
+    this.debug(null, accessor, "delete", fullPath);
     try {
-      await accessor.doDelete(obj.fullPath, obj.size != null);
+      await accessor.doDelete(fullPath, isFile);
     } catch (e) {
-      err = e;
-    }
-
-    if (err == null || err instanceof NotFoundError) {
-      console.debug(err, obj.fullPath);
-
-      const dirPath = getParentPath(obj.fullPath);
-      if (fileNameIndex == null) {
-        fileNameIndex = (await this.getDirPathIndex(accessor, dirPath))[0];
-      }
-      const record = fileNameIndex[obj.name];
-      const deleted = Date.now();
-      if (record) {
-        record.deleted = deleted;
+      if (e instanceof NotFoundError) {
+        console.info(e, fullPath);
       } else {
-        fileNameIndex[obj.name] = {
-          obj: { ...obj },
-          updated: obj.lastModified,
-          deleted: deleted,
-        };
+        throw e;
       }
-    } else {
-      throw err;
     }
   }
 
@@ -335,17 +318,19 @@ export class Synchronizer {
         // file
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted <= toUpdated) {
-            await this.copyFile(toAccessor, fromAccessor, toObj);
+            await this.copyFile(toAccessor, fromAccessor, toRecord);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else {
-            await this.deleteEntry(toAccessor, fromObj, toFileNameIndex);
+          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
+            await this.deleteEntry(toAccessor, toFullPath, true);
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
-            await this.copyFile(fromAccessor, toAccessor, fromObj);
+            await this.copyFile(fromAccessor, toAccessor, fromRecord);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else {
-            await this.deleteEntry(fromAccessor, toObj, fromFileNameIndex);
+          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
+            await this.deleteEntry(fromAccessor, fromFullPath, true);
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
@@ -356,14 +341,14 @@ export class Synchronizer {
           }
         } else {
           if (toUpdated < fromUpdated) {
-            await this.copyFile(fromAccessor, toAccessor, fromObj);
+            await this.copyFile(fromAccessor, toAccessor, fromRecord);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated < toUpdated) {
-            await this.copyFile(toAccessor, fromAccessor, toObj);
+            await this.copyFile(toAccessor, fromAccessor, toRecord);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
             if (fromObj.size !== toObj.size) {
-              await this.copyFile(fromAccessor, toAccessor, fromObj);
+              await this.copyFile(fromAccessor, toAccessor, fromRecord);
               toFileNameIndex[name] = this.deepCopy(fromRecord);
             }
           }
@@ -385,7 +370,7 @@ export class Synchronizer {
               );
             }
             fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else {
+          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
             // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
@@ -395,7 +380,8 @@ export class Synchronizer {
               fromAccessor,
               fromDirPathIndex
             );
-            await this.deleteEntry(toAccessor, fromObj, toFileNameIndex);
+            await this.deleteEntry(toAccessor, toFullPath, false);
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
@@ -412,7 +398,7 @@ export class Synchronizer {
               );
             }
             toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else {
+          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
             // force synchronize recursively if delete directory
             await this.synchronize(
               toFullPath,
@@ -422,7 +408,8 @@ export class Synchronizer {
               toAccessor,
               toDirPathIndex
             );
-            await this.deleteEntry(fromAccessor, toObj, fromFileNameIndex);
+            await this.deleteEntry(fromAccessor, fromFullPath, false);
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
