@@ -121,14 +121,20 @@ export class Synchronizer {
           fromAccessor,
           dirPath
         );
-        fromFileNameIndex[obj.name].deleted = deleted;
+        const fromRecord = fromFileNameIndex[obj.name];
+        if (fromRecord) {
+          fromRecord.deleted = deleted;
+        }
 
         await this.deleteEntry(toAccessor, obj.fullPath, true);
         const [toFileNameIndex] = await this.getDirPathIndex(
           toAccessor,
           dirPath
         );
-        toFileNameIndex[obj.name].deleted = deleted;
+        const toRecord = toFileNameIndex[obj.name];
+        if (toRecord) {
+          toRecord.deleted = deleted;
+        }
       } else {
         throw e;
       }
