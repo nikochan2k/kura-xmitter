@@ -112,29 +112,8 @@ export class Synchronizer {
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.warn(e, obj);
-
-        const dirPath = getParentPath(obj.fullPath);
-        const deleted = Date.now();
-
-        await this.deleteEntry(fromAccessor, obj.fullPath, true);
-        const [fromFileNameIndex] = await this.getDirPathIndex(
-          fromAccessor,
-          dirPath
-        );
-        const fromRecord = fromFileNameIndex[obj.name];
-        if (fromRecord) {
-          fromRecord.deleted = deleted;
-        }
-
-        await this.deleteEntry(toAccessor, obj.fullPath, true);
-        const [toFileNameIndex] = await this.getDirPathIndex(
-          toAccessor,
-          dirPath
-        );
-        const toRecord = toFileNameIndex[obj.name];
-        if (toRecord) {
-          toRecord.deleted = deleted;
-        }
+        await this.deleteEntry(fromAccessor, obj);
+        await this.deleteEntry(toAccessor, obj);
       } else {
         throw e;
       }
@@ -165,20 +144,34 @@ export class Synchronizer {
     return JSON.parse(JSON.stringify(obj));
   }
 
-  private async deleteEntry(
-    accessor: AbstractAccessor,
-    fullPath: string,
-    isFile: boolean
-  ) {
-    this.debug(null, accessor, "delete", fullPath);
+  private async deleteEntry(accessor: AbstractAccessor, obj: FileSystemObject) {
+    this.debug(null, accessor, "delete", obj.fullPath);
+
+    let err: any;
     try {
-      await accessor.doDelete(fullPath, isFile);
+      await accessor.doDelete(obj.fullPath, obj.size != null);
     } catch (e) {
-      if (e instanceof NotFoundError) {
-        console.info(e, fullPath);
+      err = e;
+    }
+
+    if (err == null || err instanceof NotFoundError) {
+      console.debug(err, obj.fullPath);
+
+      const dirPath = getParentPath(obj.fullPath);
+      const [fileNameIndex] = await this.getDirPathIndex(accessor, dirPath);
+      const record = fileNameIndex[obj.name];
+      const deleted = Date.now();
+      if (record) {
+        record.deleted = deleted;
       } else {
-        throw e;
+        fileNameIndex[obj.name] = {
+          obj: { ...obj },
+          updated: obj.lastModified,
+          deleted: deleted,
+        };
       }
+    } else {
+      throw err;
     }
   }
 
@@ -339,7 +332,7 @@ export class Synchronizer {
             await this.copyFile(toAccessor, fromAccessor, toObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
-            await this.deleteEntry(toAccessor, toFullPath, true);
+            await this.deleteEntry(toAccessor, toObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
@@ -347,7 +340,7 @@ export class Synchronizer {
             await this.copyFile(fromAccessor, toAccessor, fromObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
-            await this.deleteEntry(fromAccessor, fromFullPath, true);
+            await this.deleteEntry(fromAccessor, fromObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
@@ -398,7 +391,7 @@ export class Synchronizer {
               fromAccessor,
               fromDirPathIndex
             );
-            await this.deleteEntry(toAccessor, toFullPath, false);
+            await this.deleteEntry(toAccessor, toObj);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
@@ -426,7 +419,7 @@ export class Synchronizer {
               toAccessor,
               toDirPathIndex
             );
-            await this.deleteEntry(fromAccessor, fromFullPath, false);
+            await this.deleteEntry(fromAccessor, fromObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
