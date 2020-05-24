@@ -334,51 +334,47 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "file[1]", fullPath);
             await this.copyFile(toAccessor, fromAccessor, toRecord);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
-            this.debug(fromAccessor, toAccessor, "file[2]", fullPath);
-            await this.deleteEntry(toAccessor, fullPath, true);
-            toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "file[3]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[2]", fullPath);
+            if (toUpdated !== Synchronizer.NOT_EXISTS) {
+              await this.deleteEntry(toAccessor, fullPath, true);
+            }
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
-            this.debug(fromAccessor, toAccessor, "file[4]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[3]", fullPath);
             await this.copyFile(fromAccessor, toAccessor, fromRecord);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
-            this.debug(fromAccessor, toAccessor, "file[5]", fullPath);
-            await this.deleteEntry(fromAccessor, fullPath, true);
-            fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "file[6]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[4]", fullPath);
+            if (fromUpdated !== Synchronizer.NOT_EXISTS) {
+              await this.deleteEntry(fromAccessor, fullPath, true);
+            }
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
           if (fromDeleted < toDeleted) {
-            this.debug(fromAccessor, toAccessor, "file[7]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[5]", fullPath);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (toDeleted < fromDeleted) {
-            this.debug(fromAccessor, toAccessor, "file[8]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[6]", fullPath);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "file[9]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[7]", fullPath);
           }
         } else {
           if (toUpdated < fromUpdated) {
-            this.debug(fromAccessor, toAccessor, "file[10]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[8]", fullPath);
             await this.copyFile(fromAccessor, toAccessor, fromRecord);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated < toUpdated) {
-            this.debug(fromAccessor, toAccessor, "file[11]", fullPath);
+            this.debug(fromAccessor, toAccessor, "file[9]", fullPath);
             await this.copyFile(toAccessor, fromAccessor, toRecord);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "file[12]", fullPath);
-            if (fromObj.size !== toObj.size) {
-              await this.copyFile(fromAccessor, toAccessor, fromRecord);
-              toFileNameIndex[name] = this.deepCopy(fromRecord);
-            }
+            this.debug(fromAccessor, toAccessor, "file[10]", fullPath);
           }
         }
       } else {
@@ -388,20 +384,6 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "dir[1]", fullPath);
             this.debug(null, fromAccessor, "doMakeDirectory", fullPath);
             await fromAccessor.doMakeDirectory(toObj);
-            if (0 < recursiveCount) {
-              await this.synchronizeChildren(
-                toAccessor,
-                toDirPathIndex,
-                fromAccessor,
-                fromDirPathIndex,
-                fullPath,
-                recursiveCount - 1
-              );
-            }
-            fromFileNameIndex[name] = this.deepCopy(toRecord);
-          } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
-            this.debug(fromAccessor, toAccessor, "dir[2]", fullPath);
-            // force synchronize recursively if delete directory
             await this.synchronizeChildren(
               toAccessor,
               toDirPathIndex,
@@ -410,30 +392,28 @@ export class Synchronizer {
               fullPath,
               Number.MAX_VALUE
             );
-            await this.deleteEntry(toAccessor, fullPath, false);
-            toFileNameIndex[name] = this.deepCopy(fromRecord);
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[3]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[2]", fullPath);
+            if (toUpdated !== Synchronizer.NOT_EXISTS) {
+              // force synchronize recursively if delete directory
+              await this.synchronizeChildren(
+                fromAccessor,
+                fromDirPathIndex,
+                toAccessor,
+                toDirPathIndex,
+                fullPath,
+                Number.MAX_VALUE
+              );
+              await this.deleteEntry(toAccessor, fullPath, false);
+            }
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted <= fromUpdated) {
-            this.debug(fromAccessor, toAccessor, "dir[4]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[3]", fullPath);
             this.debug(null, toAccessor, "doMakeDirectory", fullPath);
             await toAccessor.doMakeDirectory(fromObj);
-            if (0 < recursiveCount) {
-              await this.synchronizeChildren(
-                fromAccessor,
-                fromDirPathIndex,
-                toAccessor,
-                toDirPathIndex,
-                fullPath,
-                recursiveCount - 1
-              );
-            }
-            toFileNameIndex[name] = this.deepCopy(fromRecord);
-          } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
-            this.debug(fromAccessor, toAccessor, "dir[5]", fullPath);
-            // force synchronize recursively if delete directory
             await this.synchronizeChildren(
               fromAccessor,
               fromDirPathIndex,
@@ -442,31 +422,43 @@ export class Synchronizer {
               fullPath,
               Number.MAX_VALUE
             );
-            await this.deleteEntry(fromAccessor, fullPath, false);
-            fromFileNameIndex[name] = this.deepCopy(toRecord);
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[6]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[4]", fullPath);
+            if (fromUpdated !== Synchronizer.NOT_EXISTS) {
+              // force synchronize recursively if delete directory
+              await this.synchronizeChildren(
+                fromAccessor,
+                fromDirPathIndex,
+                toAccessor,
+                toDirPathIndex,
+                fullPath,
+                Number.MAX_VALUE
+              );
+              await this.deleteEntry(fromAccessor, fullPath, false);
+            }
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else if (fromDeleted != null && toDeleted != null) {
           // prioritize old
           if (fromDeleted < toDeleted) {
-            this.debug(fromAccessor, toAccessor, "dir[7]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[5]", fullPath);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (toDeleted < fromDeleted) {
-            this.debug(fromAccessor, toAccessor, "dir[8]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[6]", fullPath);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[9]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[7]", fullPath);
           }
         } else {
           if (toUpdated < fromUpdated) {
-            this.debug(fromAccessor, toAccessor, "dir[10]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[8]", fullPath);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated < toUpdated) {
-            this.debug(fromAccessor, toAccessor, "dir[11]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[9]", fullPath);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[12]", fullPath);
+            this.debug(fromAccessor, toAccessor, "dir[10]", fullPath);
           }
 
           // Directory is not found
