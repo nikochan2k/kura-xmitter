@@ -51,9 +51,9 @@ export class Synchronizer {
     await this.synchronizeDirectory(this.src.root.fullPath, true);
   }
 
-  async synchronizeDirectory(dirPath: string, recursive: boolean) {
+  async synchronizeDirectory(dirPath: string, recursively: boolean) {
     if (!dirPath) {
-      dirPath = "/";
+      dirPath = DIR_SEPARATOR;
     }
 
     if (this.srcAccessor.options.verbose || this.dstAccessor.options.verbose) {
@@ -76,22 +76,36 @@ export class Synchronizer {
     }
     const dstDirPathIndex = await this.dstAccessor.getDirPathIndex();
 
-    await this.synchronizeSelf(
-      dirPath,
+    let [srcFileNameIndex, name] = await this.getDirPathIndex(
       this.srcAccessor,
-      srcDirPathIndex,
+      dirPath
+    );
+    let [dstFileNameIndex] = await this.getDirPathIndex(
       this.dstAccessor,
-      dstDirPathIndex
+      dirPath
     );
 
-    await this.synchronize(
-      dirPath,
-      recursive,
-      this.srcAccessor,
-      srcDirPathIndex,
-      this.dstAccessor,
-      dstDirPathIndex
-    );
+    if (dirPath === DIR_SEPARATOR) {
+      await this.synchronizeChildren(
+        this.srcAccessor,
+        srcDirPathIndex,
+        this.dstAccessor,
+        dstDirPathIndex,
+        dirPath,
+        recursively ? Number.MAX_VALUE : 0
+      );
+    } else {
+      await this.synchronizeOne(
+        this.srcAccessor,
+        srcDirPathIndex,
+        srcFileNameIndex,
+        this.dstAccessor,
+        dstDirPathIndex,
+        dstFileNameIndex,
+        name,
+        recursively ? Number.MAX_VALUE : 1
+      );
+    }
 
     await this.srcAccessor.saveDirPathIndex();
     await this.dstAccessor.saveDirPathIndex();
@@ -182,13 +196,13 @@ export class Synchronizer {
     return [fileNameIndex, name];
   }
 
-  private async synchronize(
-    dirPath: string,
-    recursive: boolean,
+  private async synchronizeChildren(
     fromAccessor: AbstractAccessor,
     fromDirPathIndex: DirPathIndex,
     toAccessor: AbstractAccessor,
-    toDirPathIndex: DirPathIndex
+    toDirPathIndex: DirPathIndex,
+    dirPath: string,
+    recursiveCount: number
   ) {
     let fromFileNameIndex = fromDirPathIndex[dirPath];
     if (!fromFileNameIndex) {
@@ -221,14 +235,14 @@ export class Synchronizer {
         }
 
         await this.synchronizeOne(
-          recursive,
           fromAccessor,
           fromDirPathIndex,
           fromFileNameIndex,
           toAccessor,
           toDirPathIndex,
           toFileNameIndex,
-          fromName
+          fromName,
+          recursiveCount
         );
 
         toNames.splice(i, 1);
@@ -237,41 +251,41 @@ export class Synchronizer {
 
       // destination not found.
       await this.synchronizeOne(
-        recursive,
         fromAccessor,
         fromDirPathIndex,
         fromFileNameIndex,
         toAccessor,
         toDirPathIndex,
         toFileNameIndex,
-        fromName
+        fromName,
+        recursiveCount
       );
     }
 
     // source not found
     for (const toName of toNames) {
       await this.synchronizeOne(
-        recursive,
         toAccessor,
         toDirPathIndex,
         toFileNameIndex,
         fromAccessor,
         fromDirPathIndex,
         fromFileNameIndex,
-        toName
+        toName,
+        recursiveCount
       );
     }
   }
 
   private async synchronizeOne(
-    recursive: boolean,
     fromAccessor: AbstractAccessor,
     fromDirPathIndex: DirPathIndex,
     fromFileNameIndex: FileNameIndex,
     toAccessor: AbstractAccessor,
     toDirPathIndex: DirPathIndex,
     toFileNameIndex: FileNameIndex,
-    name: string
+    name: string,
+    recursiveCount: number
   ) {
     let fromRecord = fromFileNameIndex[name];
     let toRecord = toFileNameIndex[name];
@@ -359,26 +373,26 @@ export class Synchronizer {
           if (fromDeleted <= toUpdated) {
             this.debug(null, fromAccessor, "putObject", toFullPath);
             await fromAccessor.doMakeDirectory(toObj);
-            if (recursive) {
-              await this.synchronize(
-                toFullPath,
-                recursive,
+            if (0 < recursiveCount) {
+              await this.synchronizeChildren(
                 toAccessor,
                 toDirPathIndex,
                 fromAccessor,
-                fromDirPathIndex
+                fromDirPathIndex,
+                toFullPath,
+                recursiveCount - 1
               );
             }
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else if (toUpdated !== Synchronizer.NOT_EXISTS) {
             // force synchronize recursively if delete directory
-            await this.synchronize(
-              toFullPath,
-              true,
+            await this.synchronizeChildren(
               toAccessor,
               toDirPathIndex,
               fromAccessor,
-              fromDirPathIndex
+              fromDirPathIndex,
+              toFullPath,
+              Number.MAX_VALUE
             );
             await this.deleteEntry(toAccessor, toFullPath, false);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
@@ -387,26 +401,26 @@ export class Synchronizer {
           if (toDeleted <= fromUpdated) {
             this.debug(null, toAccessor, "putObject", toFullPath);
             await toAccessor.doMakeDirectory(fromObj);
-            if (recursive) {
-              await this.synchronize(
-                toFullPath,
-                recursive,
+            if (0 < recursiveCount) {
+              await this.synchronizeChildren(
                 fromAccessor,
                 fromDirPathIndex,
                 toAccessor,
-                toDirPathIndex
+                toDirPathIndex,
+                toFullPath,
+                recursiveCount - 1
               );
             }
             toFileNameIndex[name] = this.deepCopy(fromRecord);
           } else if (fromUpdated !== Synchronizer.NOT_EXISTS) {
             // force synchronize recursively if delete directory
-            await this.synchronize(
-              toFullPath,
-              true,
+            await this.synchronizeChildren(
               fromAccessor,
               fromDirPathIndex,
               toAccessor,
-              toDirPathIndex
+              toDirPathIndex,
+              toFullPath,
+              Number.MAX_VALUE
             );
             await this.deleteEntry(fromAccessor, fromFullPath, false);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
@@ -419,27 +433,26 @@ export class Synchronizer {
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
         } else {
-          if (fromUpdated < toUpdated) {
+          if (!toRecord.updated) {
+            await toAccessor.doMakeDirectory(fromObj);
+            toFileNameIndex[name] = this.deepCopy(fromRecord);
+          } else if (!fromRecord.updated) {
+            await fromAccessor.doMakeDirectory(toObj);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
           } else if (toUpdated < fromUpdated) {
             toFileNameIndex[name] = this.deepCopy(fromRecord);
+          } else if (fromUpdated < toUpdated) {
+            fromFileNameIndex[name] = this.deepCopy(toRecord);
           }
 
-          // Directory is not found
-          if (!toRecord.updated) {
-            await toAccessor.doMakeDirectory(fromObj);
-          } else if (!fromRecord.updated) {
-            await fromAccessor.doMakeDirectory(toObj);
-          }
-
-          if (recursive) {
-            await this.synchronize(
-              fromFullPath,
-              recursive,
+          if (0 < recursiveCount) {
+            await this.synchronizeChildren(
               fromAccessor,
               fromDirPathIndex,
               toAccessor,
-              toDirPathIndex
+              toDirPathIndex,
+              fromFullPath,
+              recursiveCount - 1
             );
           }
         }
@@ -447,35 +460,6 @@ export class Synchronizer {
     } catch (e) {
       this.warn(fromAccessor, toAccessor, fromObj.fullPath, e);
     }
-  }
-
-  private async synchronizeSelf(
-    dirPath: string,
-    fromAccessor: AbstractAccessor,
-    fromDirPathIndex: DirPathIndex,
-    toAccessor: AbstractAccessor,
-    toDirPathIndex: DirPathIndex
-  ) {
-    if (dirPath === DIR_SEPARATOR) {
-      return;
-    }
-
-    const [fromFileNameIndex, name] = await this.getDirPathIndex(
-      fromAccessor,
-      dirPath
-    );
-    const [toFileNameIndex] = await this.getDirPathIndex(toAccessor, dirPath);
-
-    await this.synchronizeOne(
-      false,
-      fromAccessor,
-      fromDirPathIndex,
-      fromFileNameIndex,
-      toAccessor,
-      toDirPathIndex,
-      toFileNameIndex,
-      name
-    );
   }
 
   private warn(
