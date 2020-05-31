@@ -2475,15 +2475,15 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-node@^0.2.19:
-  version "0.2.19"
-  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.19.tgz#105de0e21bbaab927a451b4769a7d31737723ed1"
-  integrity sha512-ExfO6WUEBSIpCnb85xahlQihT23AudXTyuBQRbLpdI7k1DQGZL90gVJsAJc84b00DKDagGOnHNyNfnmWafAQiw==
+kura-node@^0.2.20:
+  version "0.2.20"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.20.tgz#8f0b2ee5dd826dacb603077c061864fb96825de5"
+  integrity sha512-Mj5NBTRQleZOUQNTjK9LUJ03ZIkM4Q0FRQHs77KwTG2JAhpN1wZrTBTKkCboOiuNwGiSPNCLde+UBGnqNAW0Hw==
 
-kura-s3@^0.2.21:
-  version "0.2.21"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.21.tgz#a2eacc1acb2d174ad5fd99ea86ff857a33a62d76"
-  integrity sha512-SAHQYVr3LmgBCI699UC2LuOZrvuE2YnSFM5QleLtajRozcd+lXkis5bpCfMkmM3rg7NwzpSY6RanHiPxjq+PnA==
+kura-s3@^0.2.22:
+  version "0.2.22"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.22.tgz#dd8df304095bcd2bdf14b25849229964610aa983"
+  integrity sha512-TciNjnXbfhu6vztfQruzYqGWoLD9eDAIXj+48PQmm+KgarfGQ9kkWpCi7zCJ3KgkU0HhNdDIchSP8hNLV8UPlQ==
 
 kura@^0.2.87:
   version "0.2.87"
