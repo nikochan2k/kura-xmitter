@@ -2485,10 +2485,10 @@ kura-s3@^0.2.21:
   resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.21.tgz#a2eacc1acb2d174ad5fd99ea86ff857a33a62d76"
   integrity sha512-SAHQYVr3LmgBCI699UC2LuOZrvuE2YnSFM5QleLtajRozcd+lXkis5bpCfMkmM3rg7NwzpSY6RanHiPxjq+PnA==
 
-kura@^0.2.86:
-  version "0.2.86"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.86.tgz#e922ca42799170ac69052bc61834606574de4f6b"
-  integrity sha512-v0RVZVaoMvll8ksSCZ4bsVjnhEXl0T++0kGZAqdzfNyZr4UzIkVO3Y3Pp7/Hg1GSTsQVJ86RoPLkDtmNDIJJXA==
+kura@^0.2.87:
+  version "0.2.87"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.87.tgz#8ec038d5236461de8665107231c14c6a1170e871"
+  integrity sha512-9uyc8GcnMLnTFuXsmj98nt2MXdY6gxo2unyhlsMX0Xqwow9JlfIEf6chm/2HgseIZgKKoHW4CP4b4kqNBXhZsg==
   dependencies:
     base-64 "^0.1.0"
     text-encoding-shim "^1.0.5"
