@@ -1,6 +1,6 @@
 {
   "name": "kura-xmitter",
-  "version": "0.2.34",
+  "version": "0.2.35",
   "description": "The FileSystem API abstraction library, file transmitter",
   "author": "Yoshihiro Seki",
   "license": "MIT",
