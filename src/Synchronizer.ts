@@ -41,11 +41,14 @@ export class Synchronizer {
     }
   }
 
-  async synchronizeAll() {
-    await this.synchronizeDirectory(this.src.root.fullPath, true);
+  async synchronizeAll(): Promise<boolean> {
+    return await this.synchronizeDirectory(this.src.root.fullPath, true);
   }
 
-  async synchronizeDirectory(dirPath: string, recursively: boolean) {
+  async synchronizeDirectory(
+    dirPath: string,
+    recursively: boolean
+  ): Promise<boolean> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
     }
@@ -64,8 +67,9 @@ export class Synchronizer {
       await this.dstAccessor.saveFileNameIndexes(dirPath);
     }
 
+    let updated: boolean;
     if (dirPath === DIR_SEPARATOR) {
-      await this.synchronizeChildren(
+      updated = await this.synchronizeChildren(
         this.srcAccessor,
         this.dstAccessor,
         dirPath,
@@ -81,7 +85,7 @@ export class Synchronizer {
         dirPath
       );
 
-      const updated = await this.synchronizeOne(
+      updated = await this.synchronizeOne(
         this.srcAccessor,
         srcFileNameIndex,
         this.dstAccessor,
@@ -103,6 +107,8 @@ export class Synchronizer {
         );
       }
     }
+
+    return updated;
   }
 
   private async copyFile(
@@ -194,7 +200,7 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     dirPath: string,
     recursiveCount: number
-  ) {
+  ): Promise<boolean> {
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
@@ -263,6 +269,8 @@ export class Synchronizer {
       await fromAccessor.saveFileNameIndex(dirPath, fromFileNameIndex, true);
       await toAccessor.saveFileNameIndex(dirPath, toFileNameIndex, true);
     }
+
+    return updated;
   }
 
   private async synchronizeOne(
@@ -272,7 +280,7 @@ export class Synchronizer {
     toFileNameIndex: FileNameIndex,
     name: string,
     recursiveCount: number
-  ) {
+  ): Promise<boolean> {
     let fromRecord = fromFileNameIndex[name];
     let toRecord = toFileNameIndex[name];
 
@@ -370,7 +378,7 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "dir[1]", fullPath);
             this.debug(null, fromAccessor, "doMakeDirectory", fullPath);
             await fromAccessor.doMakeDirectory(toObj);
-            await this.synchronizeChildren(
+            updated = await this.synchronizeChildren(
               toAccessor,
               fromAccessor,
               fullPath,
@@ -381,7 +389,7 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "dir[2]", fullPath);
             if (toModified !== Synchronizer.NOT_EXISTS) {
               // force synchronize recursively if delete directory
-              await this.synchronizeChildren(
+              updated = await this.synchronizeChildren(
                 fromAccessor,
                 toAccessor,
                 fullPath,
@@ -396,7 +404,7 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "dir[3]", fullPath);
             this.debug(null, toAccessor, "doMakeDirectory", fullPath);
             await toAccessor.doMakeDirectory(fromObj);
-            await this.synchronizeChildren(
+            updated = await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
               fullPath,
@@ -407,7 +415,7 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "dir[4]", fullPath);
             if (fromModified !== Synchronizer.NOT_EXISTS) {
               // force synchronize recursively if delete directory
-              await this.synchronizeChildren(
+              updated = await this.synchronizeChildren(
                 fromAccessor,
                 toAccessor,
                 fullPath,
@@ -449,7 +457,7 @@ export class Synchronizer {
           }
 
           if (0 < recursiveCount) {
-            await this.synchronizeChildren(
+            updated = await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
               fullPath,
