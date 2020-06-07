@@ -76,7 +76,7 @@ export class Synchronizer {
         recursively ? Number.MAX_VALUE : 0
       );
     } else {
-      let [srcFileNameIndex, name] = await this.getFileNameIndex(
+      let [srcFileNameIndex, parentPath, name] = await this.getFileNameIndex(
         this.srcAccessor,
         dirPath
       );
@@ -96,12 +96,12 @@ export class Synchronizer {
 
       if (updated) {
         await this.srcAccessor.saveFileNameIndex(
-          dirPath,
+          parentPath,
           srcFileNameIndex,
           true
         );
         await this.dstAccessor.saveFileNameIndex(
-          dirPath,
+          parentPath,
           dstFileNameIndex,
           true
         );
@@ -181,7 +181,7 @@ export class Synchronizer {
   private async getFileNameIndex(
     accessor: AbstractAccessor,
     dirPath: string
-  ): Promise<[FileNameIndex, string]> {
+  ): Promise<[FileNameIndex, string, string]> {
     const parentPath = getParentPath(dirPath);
     const name = getName(dirPath);
     try {
@@ -192,7 +192,7 @@ export class Synchronizer {
       }
       fileNameIndex = {};
     }
-    return [fileNameIndex, name];
+    return [fileNameIndex, parentPath, name];
   }
 
   private async synchronizeChildren(
