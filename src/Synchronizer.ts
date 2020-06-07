@@ -45,7 +45,10 @@ export class Synchronizer {
     await this.synchronizeDirectory(this.src.root.fullPath, true);
   }
 
-  async synchronizeDirectory(dirPath: string, recursively: boolean) {
+  async synchronizeDirectory(
+    dirPath: string,
+    recursively: boolean
+  ): Promise<boolean> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
     }
@@ -64,8 +67,9 @@ export class Synchronizer {
       await this.dstAccessor.saveFileNameIndexes(dirPath);
     }
 
+    let updated: boolean;
     if (dirPath === DIR_SEPARATOR) {
-      await this.synchronizeChildren(
+      updated = await this.synchronizeChildren(
         this.srcAccessor,
         this.dstAccessor,
         dirPath,
@@ -81,7 +85,7 @@ export class Synchronizer {
         dirPath
       );
 
-      const updated = await this.synchronizeOne(
+      updated = await this.synchronizeOne(
         this.srcAccessor,
         srcFileNameIndex,
         this.dstAccessor,
@@ -103,6 +107,8 @@ export class Synchronizer {
         );
       }
     }
+
+    return updated;
   }
 
   private async copyFile(
@@ -194,7 +200,7 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     dirPath: string,
     recursiveCount: number
-  ) {
+  ): Promise<boolean> {
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
@@ -263,6 +269,8 @@ export class Synchronizer {
       await fromAccessor.saveFileNameIndex(dirPath, fromFileNameIndex, true);
       await toAccessor.saveFileNameIndex(dirPath, toFileNameIndex, true);
     }
+
+    return updated;
   }
 
   private async synchronizeOne(
@@ -272,7 +280,7 @@ export class Synchronizer {
     toFileNameIndex: FileNameIndex,
     name: string,
     recursiveCount: number
-  ) {
+  ): Promise<boolean> {
     let fromRecord = fromFileNameIndex[name];
     let toRecord = toFileNameIndex[name];
 
@@ -449,12 +457,13 @@ export class Synchronizer {
           }
 
           if (0 < recursiveCount) {
-            await this.synchronizeChildren(
+            const result = await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
               fullPath,
               recursiveCount - 1
             );
+            updated = updated || result;
           }
         }
       }
