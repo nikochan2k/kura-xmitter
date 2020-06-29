@@ -281,44 +281,58 @@ export class Synchronizer {
     name: string,
     recursiveCount: number
   ): Promise<boolean> {
-    let fromRecord = fromFileNameIndex[name];
-    let toRecord = toFileNameIndex[name];
-
-    let fromObj: FileSystemObject;
-    let toObj: FileSystemObject;
-    if (fromRecord != null && toRecord == null) {
-      fromObj = fromRecord.obj;
-      toRecord = this.deepCopy(fromRecord);
-      delete toRecord.deleted;
-      toRecord.modified = Synchronizer.NOT_EXISTS;
-      toObj = toRecord.obj;
-    } else if (fromRecord == null && toRecord != null) {
-      toObj = toRecord.obj;
-      fromRecord = this.deepCopy(toRecord);
-      delete fromRecord.deleted;
-      fromRecord.modified = Synchronizer.NOT_EXISTS;
-      fromObj = fromRecord.obj;
-    } else {
-      fromObj = fromRecord.obj;
-      toObj = toRecord.obj;
-    }
-    const fullPath = fromObj.fullPath;
-    const fromDeleted = fromRecord.deleted;
-    const toDeleted = toRecord.deleted;
-    const fromModified = fromRecord.modified;
-    const toModified = toRecord.modified;
-
-    if (fromObj.size == null && toObj.size != null) {
-      // TODO
-      throw new Error("source is directory and destination is file");
-    } else if (fromObj.size != null && toObj.size == null) {
-      // TODO
-      throw new Error("source is file and destination is directory");
-    }
-
     let updated = true;
 
     try {
+      let fromRecord = fromFileNameIndex[name];
+      let toRecord = toFileNameIndex[name];
+      if (fromRecord == null && toRecord == null) {
+        this.warn(fromAccessor, toAccessor, name, new Error("No records"));
+        return false;
+      }
+
+      let fromObj: FileSystemObject;
+      let toObj: FileSystemObject;
+      if (fromRecord != null && toRecord == null) {
+        fromObj = fromRecord.obj;
+        toRecord = this.deepCopy(fromRecord);
+        delete toRecord.deleted;
+        toRecord.modified = Synchronizer.NOT_EXISTS;
+        toObj = toRecord.obj;
+      } else if (fromRecord == null && toRecord != null) {
+        toObj = toRecord.obj;
+        fromRecord = this.deepCopy(toRecord);
+        delete fromRecord.deleted;
+        fromRecord.modified = Synchronizer.NOT_EXISTS;
+        fromObj = fromRecord.obj;
+      } else {
+        fromObj = fromRecord.obj;
+        toObj = toRecord.obj;
+      }
+      const fullPath = fromObj.fullPath;
+      const fromDeleted = fromRecord.deleted;
+      const toDeleted = toRecord.deleted;
+      const fromModified = fromRecord.modified;
+      const toModified = toRecord.modified;
+
+      if (fromObj.size == null && toObj.size != null) {
+        this.warn(
+          fromAccessor,
+          toAccessor,
+          fullPath,
+          new Error("source is directory and destination is file")
+        );
+        return false;
+      } else if (fromObj.size != null && toObj.size == null) {
+        this.warn(
+          fromAccessor,
+          toAccessor,
+          fullPath,
+          new Error("source is file and destination is directory")
+        );
+        return false;
+      }
+
       if (fromObj.size != null) {
         // file
         if (fromDeleted != null && toDeleted == null) {
@@ -468,7 +482,8 @@ export class Synchronizer {
         }
       }
     } catch (e) {
-      this.warn(fromAccessor, toAccessor, fromObj.fullPath, e);
+      this.warn(fromAccessor, toAccessor, name, e);
+      return false;
     }
 
     return updated;
