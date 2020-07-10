@@ -76,11 +76,12 @@ export class Synchronizer {
         recursively ? Number.MAX_VALUE : 0
       );
     } else {
-      let [srcFileNameIndex, parentPath, name] = await this.getFileNameIndex(
-        this.srcAccessor,
-        dirPath
-      );
-      let [dstFileNameIndex] = await this.getFileNameIndex(
+      const {
+        fileNameIndex: srcFileNameIndex,
+        parentPath,
+        name,
+      } = await this.getFileNameIndex(this.srcAccessor, dirPath);
+      const { fileNameIndex: dstFileNameIndex } = await this.getFileNameIndex(
         this.dstAccessor,
         dirPath
       );
@@ -178,10 +179,7 @@ export class Synchronizer {
     }
   }
 
-  private async getFileNameIndex(
-    accessor: AbstractAccessor,
-    dirPath: string
-  ): Promise<[FileNameIndex, string, string]> {
+  private async getFileNameIndex(accessor: AbstractAccessor, dirPath: string) {
     const parentPath = getParentPath(dirPath);
     const name = getName(dirPath);
     try {
@@ -192,7 +190,7 @@ export class Synchronizer {
       }
       fileNameIndex = {};
     }
-    return [fileNameIndex, parentPath, name];
+    return { fileNameIndex, parentPath, name };
   }
 
   private async synchronizeChildren(
@@ -201,8 +199,21 @@ export class Synchronizer {
     dirPath: string,
     recursiveCount: number
   ): Promise<boolean> {
-    const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
-    const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
+    let fromFileNameIndex: FileNameIndex;
+    try {
+      fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
+    } catch (e) {
+      this.warn(fromAccessor, toAccessor, dirPath, e);
+      return false;
+    }
+
+    let toFileNameIndex: FileNameIndex;
+    try {
+      toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
+    } catch (e) {
+      this.warn(fromAccessor, toAccessor, dirPath, e);
+      return false;
+    }
 
     const fromNames = Object.keys(fromFileNameIndex).filter(
       (name) => !this.excludeFileNameRegExp.test(name)
