@@ -568,10 +568,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.4.tgz#1581d6c16e3d4803eb079c87d4ac893ee7501c2c"
   integrity sha512-x26ur3dSXgv5AwKS0lNfbjpCakGIduWU1DU91Zz58ONRWrIKGunmZBNv4P7N+e27sJkiGDsw/3fT4AtsqQBrBA==
 
-"@types/node@^14.0.20":
-  version "14.0.20"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.0.20.tgz#0da05cddbc761e1fa98af88a17244c8c1ff37231"
-  integrity sha512-MRn/NP3dee8yL5QhbSA6riuwkS+UOcsPUMOIOG3KMUQpuor/2TopdRBu8QaaB4fGU+gz/bzyDWt0FtUbeJ8H1A==
+"@types/node@^14.0.22":
+  version "14.0.22"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.0.22.tgz#23ea4d88189cec7d58f9e6b66f786b215eb61bdc"
+  integrity sha512-emeGcJvdiZ4Z3ohbmw93E/64jRzUHAItSHt8nF7M4TGgQTiWqFVGB8KNpLGFmUHmHLvjvBgFwVlqNcq+VuGv9g==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -1453,10 +1453,10 @@ extsprintf@^1.2.0:
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
-fake-indexeddb@3.0.2:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/fake-indexeddb/-/fake-indexeddb-3.0.2.tgz#53bdef4c6b71b605b53bad1a9f649c4812031210"
-  integrity sha512-m1OBz7GIbOG8ETsmlJPlCU/GP+HR7AsWvBJDH1qtDg1o4sbBrOtNduAGweSNwsoN1uKGHedmRMEWcVIr2y7HOQ==
+fake-indexeddb@3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/fake-indexeddb/-/fake-indexeddb-3.1.0.tgz#2a84c8c67de200b398fc9430b17fcf6f73764d2d"
+  integrity sha512-wpAlOALUie3nlxwO5yCulEm1Wv+xAYG71fZ1Ygpted26OrRKxtitlpJQbPGNW38TvL3nL9GKcTmFq7GlZcGn+A==
   dependencies:
     realistic-structured-clone "^2.0.1"
     setimmediate "^1.0.5"
@@ -2497,20 +2497,20 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kura-node@^0.2.20:
-  version "0.2.20"
-  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.20.tgz#8f0b2ee5dd826dacb603077c061864fb96825de5"
-  integrity sha512-Mj5NBTRQleZOUQNTjK9LUJ03ZIkM4Q0FRQHs77KwTG2JAhpN1wZrTBTKkCboOiuNwGiSPNCLde+UBGnqNAW0Hw==
+kura-node@^0.2.21:
+  version "0.2.21"
+  resolved "https://registry.yarnpkg.com/kura-node/-/kura-node-0.2.21.tgz#467dc0c68671b782dcd39660d71c2a1c133e52b0"
+  integrity sha512-Vg3FTENEPXTw6/CuG/f/tc62CssS7VxbsYLJ1MASWtHQuI6ylkhTOx1VQykCaxkI4BlWGzQaPfGjKcltVQDKHA==
 
-kura-s3@^0.2.22:
-  version "0.2.22"
-  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.22.tgz#dd8df304095bcd2bdf14b25849229964610aa983"
-  integrity sha512-TciNjnXbfhu6vztfQruzYqGWoLD9eDAIXj+48PQmm+KgarfGQ9kkWpCi7zCJ3KgkU0HhNdDIchSP8hNLV8UPlQ==
+kura-s3@^0.2.23:
+  version "0.2.23"
+  resolved "https://registry.yarnpkg.com/kura-s3/-/kura-s3-0.2.23.tgz#92c5d06ba18e1ddf97ac4ad16554384df8db8467"
+  integrity sha512-Y3Nz622H9qIumXXkpob20uEqwknvWrfRH3rIwQlA6351We9I1B+Y4OI6yfL/gVx7Cd/v4fgn5nJShrUW/aaYxQ==
 
-kura@^0.2.87:
-  version "0.2.87"
-  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.87.tgz#8ec038d5236461de8665107231c14c6a1170e871"
-  integrity sha512-9uyc8GcnMLnTFuXsmj98nt2MXdY6gxo2unyhlsMX0Xqwow9JlfIEf6chm/2HgseIZgKKoHW4CP4b4kqNBXhZsg==
+kura@^0.2.106:
+  version "0.2.106"
+  resolved "https://registry.yarnpkg.com/kura/-/kura-0.2.106.tgz#fca9ecb609d9b6558eda47676c8fa456f312fcca"
+  integrity sha512-go8xuQUK9bTBtsh0zhi6fTsm8mZZ/tI9Tzj5DmF+1o6r8v+LcXHNFC9zgr4DIDQhtRX87E49h5LwuFL+dOTmVg==
   dependencies:
     base-64 "^0.1.0"
     text-encoding-shim "^1.0.5"
