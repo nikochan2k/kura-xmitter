@@ -52,21 +52,21 @@
     "preset": "ts-jest"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.4",
-    "@types/node": "^14.0.22",
-    "aws-sdk": "^2.713.0",
-    "fake-indexeddb": "3.1.0",
-    "jest": "^26.1.0",
-    "kura": "^0.2.106",
-    "kura-node": "^0.2.21",
-    "kura-s3": "^0.2.23",
+    "@types/jest": "^26.0.10",
+    "@types/node": "^14.6.0",
+    "aws-sdk": "^2.738.0",
+    "fake-indexeddb": "3.1.2",
+    "jest": "^26.4.1",
+    "kura": "^0.2.107",
+    "kura-node": "^0.2.22",
+    "kura-s3": "^0.2.25",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
-    "ts-jest": "^26.1.1",
-    "typescript": "^3.9.6"
+    "ts-jest": "^26.2.0",
+    "typescript": "^4.0.2"
   },
   "dependencies": {},
   "peerDependencies": {
-    "kura": "^0.2.106"
+    "kura": "^0.2.107"
   }
 }
