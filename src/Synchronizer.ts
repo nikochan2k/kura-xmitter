@@ -16,7 +16,10 @@ interface SyncResult {
   backward: boolean;
 }
 
-const SYNC_RESULT_FALSES = { forward: false, backward: false };
+export const SYNC_RESULT_FALSES: SyncResult = {
+  forward: false,
+  backward: false,
+};
 
 export class Synchronizer {
   private static NOT_EXISTS = 0;
