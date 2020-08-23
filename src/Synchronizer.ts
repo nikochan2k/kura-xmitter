@@ -68,20 +68,6 @@ export class Synchronizer {
       dirPath = DIR_SEPARATOR;
     }
 
-    this.srcAccessor.clearContentsCache(dirPath);
-    if (this.srcAccessor.options.shared) {
-      await this.srcAccessor.clearFileNameIndexes(dirPath);
-    } else {
-      await this.srcAccessor.saveFileNameIndexes(dirPath);
-    }
-
-    this.dstAccessor.clearContentsCache(dirPath);
-    if (this.dstAccessor.options.shared) {
-      await this.dstAccessor.clearFileNameIndexes(dirPath);
-    } else {
-      await this.dstAccessor.saveFileNameIndexes(dirPath);
-    }
-
     let result: SyncResult;
     if (dirPath === DIR_SEPARATOR) {
       result = await this.synchronizeChildren(
@@ -111,18 +97,12 @@ export class Synchronizer {
       );
 
       if (result.backward) {
-        await this.srcAccessor.saveFileNameIndex(
-          parentPath,
-          srcFileNameIndex,
-          true
-        );
+        this.srcAccessor.dirPathIndex[dirPath] = srcFileNameIndex;
+        await this.srcAccessor.saveFileNameIndex(parentPath, true);
       }
       if (result.forward) {
-        await this.dstAccessor.saveFileNameIndex(
-          parentPath,
-          dstFileNameIndex,
-          true
-        );
+        this.dstAccessor.dirPathIndex[dirPath] = dstFileNameIndex;
+        await this.dstAccessor.saveFileNameIndex(parentPath, true);
       }
     }
 
@@ -142,7 +122,7 @@ export class Synchronizer {
     }
 
     try {
-      var content = await fromAccessor.doReadContent(obj.fullPath);
+      var content = await fromAccessor.readContentInternal(obj);
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.warn(e, obj);
@@ -154,6 +134,7 @@ export class Synchronizer {
       }
     }
 
+    await toAccessor.clearContentsCache(obj.fullPath);
     await toAccessor.doWriteContent(obj.fullPath, content);
   }
 
@@ -197,6 +178,10 @@ export class Synchronizer {
   }
 
   private async getFileNameIndex(accessor: AbstractAccessor, dirPath: string) {
+    if (accessor.options.shared) {
+      await accessor.clearFileNameIndex(dirPath);
+    }
+
     const parentPath = getParentPath(dirPath);
     const name = getName(dirPath);
     try {
@@ -216,17 +201,21 @@ export class Synchronizer {
     dirPath: string,
     recursiveCount: number
   ): Promise<SyncResult> {
-    let fromFileNameIndex: FileNameIndex;
     try {
-      fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
+      if (fromAccessor.options.shared) {
+        fromAccessor.clearFileNameIndex(dirPath);
+      }
+      var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     } catch (e) {
       this.warn(fromAccessor, toAccessor, dirPath, e);
       return SYNC_RESULT_FALSES;
     }
 
-    let toFileNameIndex: FileNameIndex;
     try {
-      toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
+      if (toAccessor.options.shared) {
+        toAccessor.clearFileNameIndex(dirPath);
+      }
+      var toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
     } catch (e) {
       this.warn(fromAccessor, toAccessor, dirPath, e);
       return SYNC_RESULT_FALSES;
@@ -294,10 +283,12 @@ export class Synchronizer {
     }
 
     if (result.backward) {
-      await fromAccessor.saveFileNameIndex(dirPath, fromFileNameIndex, true);
+      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+      await fromAccessor.saveFileNameIndex(dirPath, true);
     }
     if (result.forward) {
-      await toAccessor.saveFileNameIndex(dirPath, toFileNameIndex, true);
+      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+      await toAccessor.saveFileNameIndex(dirPath, true);
     }
 
     return result;
