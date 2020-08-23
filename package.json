@@ -56,10 +56,10 @@
     "@types/node": "^14.6.0",
     "aws-sdk": "^2.738.0",
     "fake-indexeddb": "3.1.2",
-    "jest": "^26.4.1",
-    "kura": "^0.2.107",
-    "kura-node": "^0.2.22",
-    "kura-s3": "^0.2.25",
+    "jest": "^26.4.2",
+    "kura": "^0.2.108",
+    "kura-node": "^0.2.23",
+    "kura-s3": "^0.2.27",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.2.0",
@@ -67,6 +67,6 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "kura": "^0.2.107"
+    "kura": "^0.2.108"
   }
 }
