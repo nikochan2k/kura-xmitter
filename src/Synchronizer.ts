@@ -411,10 +411,12 @@ export class Synchronizer {
             this.debug(fromAccessor, toAccessor, "file[8]", fullPath);
             await this.copyFile(fromAccessor, toAccessor, fromRecord);
             toFileNameIndex[name] = this.deepCopy(fromRecord);
+            result.forward = true;
           } else if (fromModified < toModified) {
             this.debug(fromAccessor, toAccessor, "file[9]", fullPath);
             await this.copyFile(toAccessor, fromAccessor, toRecord);
             fromFileNameIndex[name] = this.deepCopy(toRecord);
+            result.backward = true;
           } else {
             this.debug(fromAccessor, toAccessor, "file[10]", fullPath);
           }
@@ -513,13 +515,12 @@ export class Synchronizer {
           }
 
           if (0 < recursiveCount) {
-            const childrenResult = await this.synchronizeChildren(
+            await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
               fullPath,
               recursiveCount - 1
             );
-            this.mergeResult(childrenResult, result);
           }
         }
       }
