@@ -180,6 +180,8 @@ export class Synchronizer {
   private async getFileNameIndex(accessor: AbstractAccessor, dirPath: string) {
     if (accessor.options.shared) {
       await accessor.clearFileNameIndex(dirPath);
+    } else {
+      await accessor.saveFileNameIndex(dirPath);
     }
 
     const parentPath = getParentPath(dirPath);
@@ -204,6 +206,8 @@ export class Synchronizer {
     try {
       if (fromAccessor.options.shared) {
         fromAccessor.clearFileNameIndex(dirPath);
+      } else {
+        fromAccessor.saveFileNameIndex(dirPath);
       }
       var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     } catch (e) {
@@ -214,6 +218,8 @@ export class Synchronizer {
     try {
       if (toAccessor.options.shared) {
         toAccessor.clearFileNameIndex(dirPath);
+      } else {
+        toAccessor.saveFileNameIndex(dirPath);
       }
       var toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
     } catch (e) {
