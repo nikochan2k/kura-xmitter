@@ -96,14 +96,14 @@ export class Synchronizer {
         recursively ? Number.MAX_VALUE : 1
       );
 
-      if (result.backward) {
-        this.srcAccessor.dirPathIndex[dirPath] = srcFileNameIndex;
-        await this.srcAccessor.saveFileNameIndex(parentPath, true);
-      }
-      if (result.forward) {
-        this.dstAccessor.dirPathIndex[dirPath] = dstFileNameIndex;
-        await this.dstAccessor.saveFileNameIndex(parentPath, true);
-      }
+      //if (result.backward) {
+      this.srcAccessor.dirPathIndex[dirPath] = srcFileNameIndex;
+      await this.srcAccessor.saveFileNameIndex(parentPath, true);
+      //}
+      //if (result.forward) {
+      this.dstAccessor.dirPathIndex[dirPath] = dstFileNameIndex;
+      await this.dstAccessor.saveFileNameIndex(parentPath, true);
+      //}
     }
 
     return result;
