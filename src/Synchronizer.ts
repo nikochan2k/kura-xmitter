@@ -4,8 +4,6 @@ import {
   FileNameIndex,
   FileSystemAsync,
   FileSystemObject,
-  getName,
-  getParentPath,
   NotFoundError,
   Record,
 } from "kura";
