@@ -87,6 +87,13 @@ export class Synchronizer {
       recursively ? Number.MAX_VALUE : 0
     );
 
+    this.debug(
+      this.localAccessor,
+      this.remoteAccessor,
+      `SyncResult: foward=${result.forward}, backwark=${result.backward}`,
+      dirPath
+    );
+
     return result;
   }
 
