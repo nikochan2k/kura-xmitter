@@ -1,3 +1,4 @@
+import { dir } from "console";
 import {
   AbstractAccessor,
   DIR_SEPARATOR,
@@ -6,6 +7,9 @@ import {
   FileSystemObject,
   NotFoundError,
   Record,
+  textToArrayBuffer,
+  toArrayBuffer,
+  toText,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -13,6 +17,8 @@ interface SyncResult {
   forward: boolean;
   backward: boolean;
 }
+
+const SYNC_FILE_NAME = "sync";
 
 export const SYNC_RESULT_FALSES: SyncResult = {
   forward: false,
@@ -47,6 +53,27 @@ export class Synchronizer {
     if (!this.remoteAccessor || !this.remoteAccessor.options.index) {
       throw new Error(`Destination filesystem "${remoteFS.name}" has no index`);
     }
+  }
+
+  private async getLastSynchronized(dirPath: string) {
+    const indexDir = this.localAccessor.createIndexDir(dirPath);
+    const syncPath = indexDir + SYNC_FILE_NAME;
+    try {
+      const content = await this.localAccessor.doReadContent(syncPath);
+      const text = await toText(content);
+      return parseInt(text);
+    } catch (e) {
+      return NaN;
+    }
+  }
+
+  private async putLastSynchronized(dirPath: string) {
+    const indexPath = this.remoteAccessor.createIndexPath(dirPath);
+    const remoteObj = await this.remoteAccessor.doGetObject(indexPath);
+    const buffer = textToArrayBuffer(remoteObj.lastModified + "");
+    const indexDir = this.localAccessor.createIndexDir(dirPath);
+    const syncPath = indexDir + SYNC_FILE_NAME;
+    await this.localAccessor.doWriteContent(syncPath, buffer);
   }
 
   private mergeResult(newResult: SyncResult, result: SyncResult) {
@@ -159,17 +186,23 @@ export class Synchronizer {
     dirPath: string,
     recursiveCount: number
   ): Promise<SyncResult> {
+    const lastSynchronized = await this.getLastSynchronized(dirPath);
+    let remoteObject: FileSystemObject;
+    if (toAccessor === this.remoteAccessor) {
+      remoteObject = await fromAccessor.getFileNameIndexObject(dirPath);
+    } else {
+      remoteObject = await toAccessor.getFileNameIndexObject(dirPath);
+    }
+    if (lastSynchronized === remoteObject.lastModified) {
+      this.debug(fromAccessor, toAccessor, "Not modified", dirPath);
+      return SYNC_RESULT_FALSES;
+    }
+
     try {
       if (fromAccessor.options.shared) {
         fromAccessor.clearFileNameIndex(dirPath);
       }
       var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
-    } catch (e) {
-      this.warn(fromAccessor, toAccessor, dirPath, e);
-      return SYNC_RESULT_FALSES;
-    }
-
-    try {
       if (toAccessor.options.shared) {
         toAccessor.clearFileNameIndex(dirPath);
       }
@@ -248,6 +281,8 @@ export class Synchronizer {
       toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
       await toAccessor.saveFileNameIndex(dirPath, true);
     }
+
+    await this.putLastSynchronized(dirPath);
 
     return result;
   }
