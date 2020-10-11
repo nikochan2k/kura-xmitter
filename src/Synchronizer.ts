@@ -126,7 +126,8 @@ export class Synchronizer {
 
   async synchronizeDirectory(
     dirPath: string,
-    recursively: boolean
+    recursively: boolean,
+    deleteFlag = false
   ): Promise<SyncResult> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
@@ -137,7 +138,7 @@ export class Synchronizer {
       this.remoteAccessor,
       dirPath,
       recursively ? Number.MAX_VALUE : 0,
-      false
+      deleteFlag
     );
 
     this.debug(
