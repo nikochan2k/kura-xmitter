@@ -151,7 +151,7 @@ export function testAll(
       writer = await nestedFE.createWriter();
       await writer.writeFile(new Blob(["nested"], { type: "text/plain" }));
 
-      await synchronizer.synchronizeDirectory("/folder", false);
+      await synchronizer.synchronizeDirectory("/folder", true);
 
       const localMeta = await localFE.getMetadata();
       const remoteParentDE = await remote.root.getDirectory("folder");
