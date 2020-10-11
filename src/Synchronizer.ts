@@ -83,9 +83,27 @@ export class Synchronizer {
 
   private async putLastSynchronized(dirPath: string) {
     const localPath = this.localAccessor.createIndexPath(dirPath);
-    const localObj = await this.localAccessor.doGetObject(localPath);
+    try {
+      var localObj = await this.localAccessor.doGetObject(localPath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        await this.localAccessor.saveFileNameIndex(dirPath);
+        localObj = await this.localAccessor.doGetObject(localPath);
+      } else {
+        throw e;
+      }
+    }
     const remotePath = this.remoteAccessor.createIndexPath(dirPath);
-    const remoteObj = await this.remoteAccessor.doGetObject(remotePath);
+    try {
+      var remoteObj = await this.remoteAccessor.doGetObject(remotePath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        await this.remoteAccessor.saveFileNameIndex(dirPath);
+        remoteObj = await this.remoteAccessor.doGetObject(remotePath);
+      } else {
+        throw e;
+      }
+    }
     const lastSync: LastSync = {
       local: localObj.lastModified,
       remote: remoteObj.lastModified,
