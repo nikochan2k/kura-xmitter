@@ -5,6 +5,8 @@ import {
   FileNameIndex,
   FileSystemAsync,
   FileSystemObject,
+  getName,
+  INDEX_FILE_NAME,
   NotFoundError,
   Record,
   textToArrayBuffer,
@@ -63,7 +65,11 @@ export class Synchronizer {
       const text = await toText(content);
       return parseInt(text);
     } catch (e) {
-      return NaN;
+      if (e instanceof NotFoundError) {
+        return NaN;
+      } else {
+        throw e;
+      }
     }
   }
 
@@ -188,10 +194,21 @@ export class Synchronizer {
   ): Promise<SyncResult> {
     const lastSynchronized = await this.getLastSynchronized(dirPath);
     let remoteObject: FileSystemObject;
-    if (toAccessor === this.remoteAccessor) {
-      remoteObject = await fromAccessor.getFileNameIndexObject(dirPath);
-    } else {
-      remoteObject = await toAccessor.getFileNameIndexObject(dirPath);
+    try {
+      if (toAccessor === this.remoteAccessor) {
+        remoteObject = await toAccessor.getFileNameIndexObject(dirPath);
+      } else {
+        remoteObject = await fromAccessor.getFileNameIndexObject(dirPath);
+      }
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        remoteObject = {
+          fullPath: this.remoteAccessor.createIndexPath(dirPath),
+          name: INDEX_FILE_NAME,
+        };
+      } else {
+        throw e;
+      }
     }
     if (lastSynchronized === remoteObject.lastModified) {
       this.debug(fromAccessor, toAccessor, "Not modified", dirPath);
