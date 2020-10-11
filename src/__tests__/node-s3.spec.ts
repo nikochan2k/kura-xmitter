@@ -17,7 +17,6 @@ testAll(async () => {
   } catch {}
   const nodeLocalFileSystem = new NodeLocalFileSystemAsync(rootDir, {
     index: true,
-    indexOptions: { writeDelayMillis: 0 },
   });
   const local = await nodeLocalFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
@@ -48,7 +47,6 @@ testAll(async () => {
     "example",
     {
       index: true,
-      indexOptions: { writeDelayMillis: 0 },
     }
   );
   const remote = await s3LocalFileSystem.requestFileSystemAsync(

@@ -214,7 +214,6 @@ export class Synchronizer {
     recursiveCount: number,
     deleteFlag: boolean
   ): Promise<SyncResult> {
-    /*
     const lastSync = await this.getLastSynchronized(dirPath);
     try {
       const localObj = await this.localAccessor.getFileNameIndexObject(dirPath);
@@ -233,14 +232,13 @@ export class Synchronizer {
         throw e;
       }
     }
-    */
 
     try {
-      if (fromAccessor.options.shared) {
+      if (fromAccessor === this.remoteAccessor) {
         fromAccessor.clearFileNameIndex(dirPath);
       }
       var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
-      if (toAccessor.options.shared) {
+      if (toAccessor === this.remoteAccessor) {
         toAccessor.clearFileNameIndex(dirPath);
       }
       var toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
@@ -322,7 +320,7 @@ export class Synchronizer {
       await toAccessor.saveFileNameIndex(dirPath);
     }
 
-    // await this.putLastSynchronized(dirPath);
+    await this.putLastSynchronized(dirPath);
 
     return result;
   }
