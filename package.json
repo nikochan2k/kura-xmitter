@@ -52,11 +52,11 @@
   },
   "devDependencies": {
     "@types/jest": "^26.0.14",
-    "@types/node": "^14.11.8",
-    "aws-sdk": "^2.771.0",
+    "@types/node": "^14.11.10",
+    "aws-sdk": "^2.773.0",
     "fake-indexeddb": "3.1.2",
-    "jest": "^26.5.2",
-    "kura": "^0.2.134",
+    "jest": "^26.5.3",
+    "kura": "^0.2.135",
     "kura-node": "^0.2.30",
     "kura-s3": "^0.2.32",
     "npm-run-all": "^4.1.5",
@@ -68,6 +68,6 @@
     "tslib": "^2.0.3"
   },
   "peerDependencies": {
-    "kura": "^0.2.134"
+    "kura": "^0.2.135"
   }
 }
