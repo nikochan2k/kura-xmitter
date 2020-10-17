@@ -146,25 +146,10 @@ export class Synchronizer {
     recursiveCount: number,
     deleted = false
   ): Promise<SyncResult> {
-    try {
-      if (fromAccessor === this.remoteAccessor) {
-        fromAccessor.clearFileNameIndex(dirPath);
-      }
-      var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
-    } catch (e) {
-      this.warn(fromAccessor, toAccessor, dirPath, e);
-      return SYNC_RESULT_FALSES;
-    }
-
-    try {
-      if (toAccessor === this.remoteAccessor) {
-        toAccessor.clearFileNameIndex(dirPath);
-      }
-      var toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
-    } catch (e) {
-      this.warn(fromAccessor, toAccessor, dirPath, e);
-      return SYNC_RESULT_FALSES;
-    }
+    fromAccessor.clearFileNameIndex(dirPath);
+    const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
+    toAccessor.clearFileNameIndex(dirPath);
+    const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
     const fromNames = Object.keys(fromFileNameIndex).filter(
       (name) => !this.excludeFileNameRegExp.test(name)
