@@ -1,4 +1,3 @@
-import { debug } from "console";
 import {
   AbstractAccessor,
   DIR_SEPARATOR,
@@ -91,7 +90,7 @@ export class Synchronizer {
       this.localAccessor,
       this.remoteAccessor,
       dirPath,
-      recursively ? Number.MAX_VALUE : 0
+      recursively
     );
 
     this.debug(
@@ -174,7 +173,7 @@ export class Synchronizer {
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     dirPath: string,
-    recursiveCount: number
+    recursively: boolean
   ): Promise<SyncResult> {
     try {
       if (fromAccessor === this.remoteAccessor) {
@@ -218,7 +217,7 @@ export class Synchronizer {
           toAccessor,
           toFileNameIndex,
           fromName,
-          recursiveCount
+          recursively
         );
         this.mergeResult(oneResult, result);
 
@@ -233,7 +232,7 @@ export class Synchronizer {
         toAccessor,
         toFileNameIndex,
         fromName,
-        recursiveCount
+        recursively
       );
       this.mergeResult(oneResult, result);
     }
@@ -246,7 +245,7 @@ export class Synchronizer {
         fromAccessor,
         fromFileNameIndex,
         toName,
-        recursiveCount
+        recursively
       );
       this.mergeResult(oneResult, result);
     }
@@ -281,7 +280,7 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     toFileNameIndex: FileNameIndex,
     name: string,
-    recursiveCount: number
+    recursively: boolean
   ): Promise<SyncResult> {
     const result: SyncResult = { localToRemote: false, remoteToLocal: false };
 
@@ -484,7 +483,7 @@ export class Synchronizer {
               toAccessor,
               fromAccessor,
               fullPath,
-              Number.MAX_VALUE
+              true
             );
             fromFileNameIndex[name] = this.deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
@@ -523,7 +522,7 @@ export class Synchronizer {
               fromAccessor,
               toAccessor,
               fullPath,
-              Number.MAX_VALUE
+              true
             );
             toFileNameIndex[name] = this.deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
@@ -595,12 +594,12 @@ export class Synchronizer {
             this.setResult(fromAccessor, false, result);
           }
 
-          if (0 < recursiveCount) {
+          if (recursively) {
             await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
               fullPath,
-              recursiveCount - 1
+              recursively
             );
           }
         }
