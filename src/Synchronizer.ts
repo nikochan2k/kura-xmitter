@@ -1,11 +1,10 @@
+import { debug } from "console";
 import {
   AbstractAccessor,
   DIR_SEPARATOR,
   FileNameIndex,
   FileSystemAsync,
   FileSystemObject,
-  INDEX_DIR,
-  INDEX_FILE_NAME,
   NotFoundError,
   Record,
 } from "kura";
@@ -132,11 +131,11 @@ export class Synchronizer {
       return;
     }
     if (fromAccessor) {
-      console.log(
+      console.debug(
         `${fromAccessor.name} => ${toAccessor.name} - ${title}: ${path}`
       );
     } else {
-      console.log(`${toAccessor.name} - ${title}: ${path}`);
+      console.debug(`${toAccessor.name} - ${title}: ${path}`);
     }
   }
 
@@ -496,11 +495,19 @@ export class Synchronizer {
               toFileNameIndex[name] = this.deepCopy(fromRecord);
               result.localToRemote = true;
               const indexDir = fromAccessor.createIndexDir(fullPath);
-              await fromAccessor.doDeleteRecursively(indexDir);
+              try {
+                await fromAccessor.doDeleteRecursively(indexDir);
+              } catch (e) {
+                if (!(e instanceof NotFoundError)) throw e;
+              }
               delete fromFileNameIndex[name];
             } else {
               const indexDir = toAccessor.createIndexDir(fullPath);
-              await toAccessor.doDeleteRecursively(indexDir);
+              try {
+                await toAccessor.doDeleteRecursively(indexDir);
+              } catch (e) {
+                if (!(e instanceof NotFoundError)) throw e;
+              }
               delete toFileNameIndex[name];
             }
             result.remoteToLocal = true;
@@ -527,11 +534,19 @@ export class Synchronizer {
               fromFileNameIndex[name] = this.deepCopy(toRecord);
               result.localToRemote = true;
               const indexDir = toAccessor.createIndexDir(fullPath);
-              await toAccessor.doDeleteRecursively(indexDir);
+              try {
+                await toAccessor.doDeleteRecursively(indexDir);
+              } catch (e) {
+                if (!(e instanceof NotFoundError)) throw e;
+              }
               delete toFileNameIndex[name];
             } else {
               const indexDir = fromAccessor.createIndexDir(fullPath);
-              await fromAccessor.doDeleteRecursively(indexDir);
+              try {
+                await fromAccessor.doDeleteRecursively(indexDir);
+              } catch (e) {
+                if (!(e instanceof NotFoundError)) throw e;
+              }
               delete fromFileNameIndex[name];
             }
             result.remoteToLocal = true;
