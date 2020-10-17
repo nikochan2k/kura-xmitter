@@ -5,7 +5,11 @@ import {
   FileSystemAsync,
   FileSystemObject,
   NotFoundError,
+  objectToText,
   Record,
+  textToArrayBuffer,
+  textToObject,
+  toText,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -14,9 +18,21 @@ interface SyncResult {
   backward: boolean;
 }
 
+interface LastSync {
+  local: number;
+  remote: number;
+}
+
+const LAST_SYNC_FILE_NAME = "sync.json";
+
 export const SYNC_RESULT_FALSES: SyncResult = {
   forward: false,
   backward: false,
+};
+
+const NO_SYNC_RESULT = {
+  local: NaN,
+  remote: NaN,
 };
 
 export class Synchronizer {
@@ -47,6 +63,56 @@ export class Synchronizer {
     if (!this.remoteAccessor || !this.remoteAccessor.options.index) {
       throw new Error(`Destination filesystem "${remoteFS.name}" has no index`);
     }
+  }
+
+  private async getLastSynchronized(dirPath: string) {
+    const syncPath =
+      this.localAccessor.createIndexDir(dirPath) + LAST_SYNC_FILE_NAME;
+    try {
+      const content = await this.localAccessor.doReadContent(syncPath);
+      const text = await toText(content);
+      const obj = textToObject(text) as LastSync;
+      if (obj.local == null || obj.remote == null) {
+        return NO_SYNC_RESULT;
+      }
+      return obj;
+    } catch (e) {
+      return NO_SYNC_RESULT;
+    }
+  }
+
+  private async putLastSynchronized(dirPath: string) {
+    const localPath = this.localAccessor.createIndexPath(dirPath);
+    try {
+      var localObj = await this.localAccessor.doGetObject(localPath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        await this.localAccessor.saveFileNameIndex(dirPath);
+        localObj = await this.localAccessor.doGetObject(localPath);
+      } else {
+        throw e;
+      }
+    }
+    const remotePath = this.remoteAccessor.createIndexPath(dirPath);
+    try {
+      var remoteObj = await this.remoteAccessor.doGetObject(remotePath);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        await this.remoteAccessor.saveFileNameIndex(dirPath);
+        remoteObj = await this.remoteAccessor.doGetObject(remotePath);
+      } else {
+        throw e;
+      }
+    }
+    const lastSync: LastSync = {
+      local: localObj.lastModified,
+      remote: remoteObj.lastModified,
+    };
+    const text = objectToText(lastSync);
+    const buffer = textToArrayBuffer(text);
+    const indexDir = this.localAccessor.createIndexDir(dirPath);
+    const syncPath = indexDir + LAST_SYNC_FILE_NAME;
+    await this.localAccessor.doWriteContent(syncPath, buffer);
   }
 
   private mergeResult(newResult: SyncResult, result: SyncResult) {
@@ -157,7 +223,8 @@ export class Synchronizer {
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     dirPath: string,
-    recursiveCount: number
+    recursiveCount: number,
+    deleted = false
   ): Promise<SyncResult> {
     try {
       if (fromAccessor === this.remoteAccessor) {
@@ -207,7 +274,8 @@ export class Synchronizer {
           toAccessor,
           toFileNameIndex,
           fromName,
-          recursiveCount
+          recursiveCount,
+          deleted
         );
         this.mergeResult(oneResult, result);
 
@@ -222,7 +290,8 @@ export class Synchronizer {
         toAccessor,
         toFileNameIndex,
         fromName,
-        recursiveCount
+        recursiveCount,
+        deleted
       );
       this.mergeResult(oneResult, result);
     }
@@ -235,7 +304,8 @@ export class Synchronizer {
         fromAccessor,
         fromFileNameIndex,
         toName,
-        recursiveCount
+        recursiveCount,
+        deleted
       );
       this.mergeResult(oneResult, result);
     }
@@ -249,6 +319,8 @@ export class Synchronizer {
       await toAccessor.saveFileNameIndex(dirPath);
     }
 
+    await this.putLastSynchronized(dirPath);
+
     return result;
   }
 
@@ -258,7 +330,8 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     toFileNameIndex: FileNameIndex,
     name: string,
-    recursiveCount: number
+    recursiveCount: number,
+    deleted = false
   ): Promise<SyncResult> {
     const result: SyncResult = { forward: false, backward: false };
 
@@ -449,7 +522,7 @@ export class Synchronizer {
       } else {
         // directory
         if (fromDeleted != null && toDeleted == null) {
-          if (fromDeleted <= toModified) {
+          if (!deleted && fromDeleted <= toModified) {
             this.debug(fromAccessor, toAccessor, "dir[1]", fullPath);
             this.debug(null, fromAccessor, "doMakeDirectory", fullPath);
             await fromAccessor.doMakeDirectory(toObj);
@@ -469,7 +542,8 @@ export class Synchronizer {
                 fromAccessor,
                 toAccessor,
                 fullPath,
-                Number.MAX_VALUE
+                Number.MAX_VALUE,
+                deleted
               );
               await this.deleteEntry(toAccessor, fullPath, false);
             }
@@ -481,7 +555,7 @@ export class Synchronizer {
             }
           }
         } else if (fromDeleted == null && toDeleted != null) {
-          if (toDeleted <= fromModified) {
+          if (!deleted && toDeleted <= fromModified) {
             this.debug(fromAccessor, toAccessor, "dir[3]", fullPath);
             this.debug(null, toAccessor, "doMakeDirectory", fullPath);
             await toAccessor.doMakeDirectory(fromObj);
@@ -501,7 +575,8 @@ export class Synchronizer {
                 fromAccessor,
                 toAccessor,
                 fullPath,
-                Number.MAX_VALUE
+                Number.MAX_VALUE,
+                deleted
               );
               await this.deleteEntry(fromAccessor, fullPath, false);
             }
