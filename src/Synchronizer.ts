@@ -226,6 +226,25 @@ export class Synchronizer {
     recursiveCount: number,
     deleted = false
   ): Promise<SyncResult> {
+    const lastSync = await this.getLastSynchronized(dirPath);
+    try {
+      const localObj = await this.localAccessor.getFileNameIndexObject(dirPath);
+      const remoteObj = await this.remoteAccessor.getFileNameIndexObject(
+        dirPath
+      );
+      if (
+        lastSync.local === localObj.lastModified &&
+        lastSync.remote === remoteObj.lastModified
+      ) {
+        this.debug(fromAccessor, toAccessor, "Not modified", dirPath);
+        return SYNC_RESULT_FALSES;
+      }
+    } catch (e) {
+      if (!(e instanceof NotFoundError)) {
+        throw e;
+      }
+    }
+
     try {
       if (fromAccessor === this.remoteAccessor) {
         fromAccessor.clearFileNameIndex(dirPath);
