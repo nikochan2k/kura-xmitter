@@ -21,19 +21,14 @@ interface SyncResult {
 export class Notifier {
   // #region Properties (3)
 
-  private _callback: (processed: number, total: number) => void;
-  private _processed: number;
-  private _total: number;
+  private _processed = 0;
+  private _total = 0;
 
   // #endregion Properties (3)
 
   // #region Constructors (1)
 
-  constructor(private callback = (processed: number, total: number) => {}) {
-    this._callback = callback;
-    this._processed = 0;
-    this._total = 0;
-  }
+  constructor(private _callback = (processed: number, total: number) => {}) {}
 
   // #endregion Constructors (1)
 
