@@ -10,8 +10,58 @@ import {
 import { SyncOptions } from "./SyncOptions";
 
 interface SyncResult {
+  // #region Properties (2)
+
   localToRemote: boolean;
   remoteToLocal: boolean;
+
+  // #endregion Properties (2)
+}
+
+export class Notifier {
+  // #region Properties (3)
+
+  private _callback: (processed: number, total: number) => void;
+  private _processed: number;
+  private _total: number;
+
+  // #endregion Properties (3)
+
+  // #region Constructors (1)
+
+  constructor(private callback = (processed: number, total: number) => {}) {
+    this._callback = callback;
+    this._processed = 0;
+    this._total = 0;
+  }
+
+  // #endregion Constructors (1)
+
+  // #region Public Accessors (2)
+
+  public get processed() {
+    return this._processed;
+  }
+
+  public get total() {
+    return this._total;
+  }
+
+  // #endregion Public Accessors (2)
+
+  // #region Public Methods (2)
+
+  public incrementProcessed(count = 1) {
+    this._processed = this._processed + count;
+    this._callback(this._processed, this._total);
+  }
+
+  public incrementTotal(count = 1) {
+    this._total = this._total + count;
+    this._callback(this._processed, this._total);
+  }
+
+  // #endregion Public Methods (2)
 }
 
 export const SYNC_RESULT_FALSES: SyncResult = {
@@ -20,11 +70,17 @@ export const SYNC_RESULT_FALSES: SyncResult = {
 };
 
 export class Synchronizer {
+  // #region Properties (4)
+
   private static NOT_EXISTS = 0;
 
   private excludeFileNameRegExp: RegExp;
   private localAccessor: AbstractAccessor;
   private remoteAccessor: AbstractAccessor;
+
+  // #endregion Properties (4)
+
+  // #region Constructors (1)
 
   constructor(
     public local: FileSystemAsync,
@@ -49,38 +105,18 @@ export class Synchronizer {
     }
   }
 
-  private mergeResult(newResult: SyncResult, result: SyncResult) {
-    result.localToRemote = result.localToRemote || newResult.localToRemote;
-    result.remoteToLocal = result.remoteToLocal || newResult.remoteToLocal;
-  }
+  // #endregion Constructors (1)
 
-  private setResult(
-    fromAccessor: AbstractAccessor,
-    localToRemote: boolean,
-    result: SyncResult
-  ) {
-    let newResult: SyncResult;
-    if (fromAccessor === this.localAccessor) {
-      newResult = {
-        localToRemote: localToRemote,
-        remoteToLocal: !localToRemote,
-      };
-    } else {
-      newResult = {
-        localToRemote: !localToRemote,
-        remoteToLocal: localToRemote,
-      };
-    }
-    this.mergeResult(newResult, result);
-  }
+  // #region Public Methods (2)
 
-  async synchronizeAll() {
+  public async synchronizeAll() {
     return await this.synchronizeDirectory(this.local.root.fullPath, true);
   }
 
-  async synchronizeDirectory(
+  public async synchronizeDirectory(
     dirPath: string,
-    recursively: boolean
+    recursively: boolean,
+    notifier = new Notifier()
   ): Promise<SyncResult> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
@@ -90,7 +126,8 @@ export class Synchronizer {
       this.localAccessor,
       this.remoteAccessor,
       dirPath,
-      recursively
+      recursively,
+      notifier
     );
 
     this.debug(
@@ -102,6 +139,10 @@ export class Synchronizer {
 
     return result;
   }
+
+  // #endregion Public Methods (2)
+
+  // #region Private Methods (9)
 
   private async copyFile(
     fromAccessor: AbstractAccessor,
@@ -169,11 +210,37 @@ export class Synchronizer {
     }
   }
 
+  private mergeResult(newResult: SyncResult, result: SyncResult) {
+    result.localToRemote = result.localToRemote || newResult.localToRemote;
+    result.remoteToLocal = result.remoteToLocal || newResult.remoteToLocal;
+  }
+
+  private setResult(
+    fromAccessor: AbstractAccessor,
+    localToRemote: boolean,
+    result: SyncResult
+  ) {
+    let newResult: SyncResult;
+    if (fromAccessor === this.localAccessor) {
+      newResult = {
+        localToRemote: localToRemote,
+        remoteToLocal: !localToRemote,
+      };
+    } else {
+      newResult = {
+        localToRemote: !localToRemote,
+        remoteToLocal: localToRemote,
+      };
+    }
+    this.mergeResult(newResult, result);
+  }
+
   private async synchronizeChildren(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     dirPath: string,
-    recursively: boolean
+    recursively: boolean,
+    notifier: Notifier
   ): Promise<SyncResult> {
     try {
       if (fromAccessor === this.remoteAccessor) {
@@ -189,19 +256,16 @@ export class Synchronizer {
       return SYNC_RESULT_FALSES;
     }
 
-    const fromNames = Object.keys(fromFileNameIndex).filter(
-      (name) => !this.excludeFileNameRegExp.test(name)
-    );
-    const toNames = Object.keys(toFileNameIndex).filter(
-      (name) => !this.excludeFileNameRegExp.test(name)
-    );
+    const fromNames = Object.keys(fromFileNameIndex);
+    notifier.incrementTotal(fromNames.length);
+    const toNames = Object.keys(toFileNameIndex);
 
     const result: SyncResult = { localToRemote: false, remoteToLocal: false };
 
-    outer: while (0 < fromNames.length) {
-      const fromName = fromNames.shift();
-      if (!fromName) {
-        break;
+    outer: for (const fromName of fromNames) {
+      if (this.excludeFileNameRegExp.test(fromName)) {
+        notifier.incrementProcessed();
+        continue;
       }
 
       // source to destination
@@ -217,11 +281,13 @@ export class Synchronizer {
           toAccessor,
           toFileNameIndex,
           fromName,
-          recursively
+          recursively,
+          notifier
         );
         this.mergeResult(oneResult, result);
 
         toNames.splice(i, 1);
+        notifier.incrementProcessed();
         continue outer;
       }
 
@@ -232,22 +298,32 @@ export class Synchronizer {
         toAccessor,
         toFileNameIndex,
         fromName,
-        recursively
+        recursively,
+        notifier
       );
       this.mergeResult(oneResult, result);
+      notifier.incrementProcessed();
     }
 
     // source not found
+    notifier.incrementTotal(toNames.length);
     for (const toName of toNames) {
+      if (this.excludeFileNameRegExp.test(toName)) {
+        notifier.incrementProcessed();
+        continue;
+      }
+
       const oneResult = await this.synchronizeOne(
         toAccessor,
         toFileNameIndex,
         fromAccessor,
         fromFileNameIndex,
         toName,
-        recursively
+        recursively,
+        notifier
       );
       this.mergeResult(oneResult, result);
+      notifier.incrementProcessed();
     }
 
     if (result.localToRemote) {
@@ -280,7 +356,8 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     toFileNameIndex: FileNameIndex,
     name: string,
-    recursively: boolean
+    recursively: boolean,
+    notifier: Notifier
   ): Promise<SyncResult> {
     const result: SyncResult = { localToRemote: false, remoteToLocal: false };
 
@@ -483,7 +560,8 @@ export class Synchronizer {
               toAccessor,
               fromAccessor,
               fullPath,
-              true
+              true,
+              notifier
             );
             fromFileNameIndex[name] = this.deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
@@ -522,7 +600,8 @@ export class Synchronizer {
               fromAccessor,
               toAccessor,
               fullPath,
-              true
+              true,
+              notifier
             );
             toFileNameIndex[name] = this.deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
@@ -599,7 +678,8 @@ export class Synchronizer {
               fromAccessor,
               toAccessor,
               fullPath,
-              recursively
+              recursively,
+              notifier
             );
           }
         }
@@ -625,4 +705,6 @@ export class Synchronizer {
         JSON.stringify(e)
     );
   }
+
+  // #endregion Private Methods (9)
 }
