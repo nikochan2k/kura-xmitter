@@ -186,14 +186,14 @@ export class Synchronizer {
     this.debug(null, accessor, "delete", fullPath);
     try {
       if (isFile) {
-        await accessor.doDelete(fullPath, isFile);
+        await accessor.forceDelete(fullPath, isFile);
       } else {
         if (accessor === this.remoteAccessor) {
-          await accessor.deleteRecursively(fullPath);
+          await accessor.forceDeleteRecursively(fullPath);
         } else {
-          await accessor.doDeleteRecursively(fullPath);
+          await accessor.forceDeleteRecursively(fullPath);
           const indexDir = accessor.createIndexDir(fullPath);
-          await accessor.doDeleteRecursively(indexDir);
+          await accessor.forceDeleteRecursively(indexDir);
         }
       }
     } catch (e) {
@@ -571,7 +571,7 @@ export class Synchronizer {
               if (fromModified !== Synchronizer.NOT_EXISTS) {
                 try {
                   const indexDir = fromAccessor.createIndexDir(fullPath);
-                  await fromAccessor.doDeleteRecursively(indexDir);
+                  await fromAccessor.forceDeleteRecursively(indexDir);
                 } catch (e) {
                   if (e instanceof NotFoundError) {
                     console.info(e, fullPath);
@@ -611,7 +611,7 @@ export class Synchronizer {
               if (toModified !== Synchronizer.NOT_EXISTS) {
                 try {
                   const indexDir = toAccessor.createIndexDir(fullPath);
-                  await toAccessor.doDeleteRecursively(indexDir);
+                  await toAccessor.forceDeleteRecursively(indexDir);
                 } catch (e) {
                   if (e instanceof NotFoundError) {
                     console.info(e, fullPath);
