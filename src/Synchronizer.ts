@@ -237,19 +237,14 @@ export class Synchronizer {
     recursively: boolean,
     notifier: Notifier
   ): Promise<SyncResult> {
-    try {
-      if (fromAccessor === this.remoteAccessor) {
-        fromAccessor.clearFileNameIndex(dirPath);
-      }
-      var fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
-      if (toAccessor === this.remoteAccessor) {
-        toAccessor.clearFileNameIndex(dirPath);
-      }
-      var toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
-    } catch (e) {
-      this.warn(fromAccessor, toAccessor, dirPath, e);
-      return SYNC_RESULT_FALSES;
+    if (fromAccessor === this.remoteAccessor) {
+      fromAccessor.clearFileNameIndex(dirPath);
     }
+    const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
+    if (toAccessor === this.remoteAccessor) {
+      toAccessor.clearFileNameIndex(dirPath);
+    }
+    const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
     const fromNames = Object.keys(fromFileNameIndex);
     notifier.incrementTotal(fromNames.length);
