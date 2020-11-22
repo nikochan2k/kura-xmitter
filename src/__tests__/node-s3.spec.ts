@@ -15,10 +15,11 @@ testAll(async () => {
     statSync(rootDir);
     rmdirSync(rootDir, { recursive: true });
   } catch {}
-  const nodeLocalFileSystem = new NodeLocalFileSystemAsync(rootDir, {
+
+  const nodeFileSystem = new NodeLocalFileSystemAsync(rootDir, {
     index: true,
   });
-  const local = await nodeLocalFileSystem.requestFileSystemAsync(
+  const local = await nodeFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
   );
@@ -30,7 +31,6 @@ testAll(async () => {
     s3ForcePathStyle: true, // needed with minio?
     signatureVersion: "v4",
   };
-
   const s3 = new S3(options);
   const bucket = "web-file-system-test";
   try {
@@ -40,8 +40,7 @@ testAll(async () => {
   for (const content of list.Contents) {
     await s3.deleteObject({ Bucket: bucket, Key: content.Key }).promise();
   }
-
-  const s3LocalFileSystem = new S3LocalFileSystemAsync(
+  const s3FileSystem = new S3LocalFileSystemAsync(
     options,
     "web-file-system-test",
     "example",
@@ -49,7 +48,7 @@ testAll(async () => {
       index: true,
     }
   );
-  const remote = await s3LocalFileSystem.requestFileSystemAsync(
+  const remote = await s3FileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
   );

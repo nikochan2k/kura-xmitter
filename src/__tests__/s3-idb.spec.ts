@@ -5,15 +5,6 @@ import { S3LocalFileSystemAsync } from "kura-s3";
 import { testAll } from "./syncronize";
 
 testAll(async () => {
-  const idbLocalFileSystem = new IdbLocalFileSystemAsync(
-    "web-file-system-test",
-    { index: true }
-  );
-  const local = await idbLocalFileSystem.requestFileSystemAsync(
-    window.PERSISTENT,
-    Number.MAX_VALUE
-  );
-
   const options: S3.ClientConfiguration = {
     accessKeyId: "minioadmin",
     secretAccessKey: "minioadmin",
@@ -21,7 +12,6 @@ testAll(async () => {
     s3ForcePathStyle: true, // needed with minio?
     signatureVersion: "v4",
   };
-
   const s3 = new S3(options);
   const bucket = "web-file-system-test";
   try {
@@ -31,14 +21,21 @@ testAll(async () => {
   for (const content of list.Contents) {
     await s3.deleteObject({ Bucket: bucket, Key: content.Key }).promise();
   }
-
-  const s3LocalFileSystem = new S3LocalFileSystemAsync(
+  const s3FileSystem = new S3LocalFileSystemAsync(
     options,
     "web-file-system-test",
     "example",
     { index: true }
   );
-  const remote = await s3LocalFileSystem.requestFileSystemAsync(
+  const local = await s3FileSystem.requestFileSystemAsync(
+    window.PERSISTENT,
+    Number.MAX_VALUE
+  );
+
+  const idbFileSystem = new IdbLocalFileSystemAsync("web-file-system-test", {
+    index: true,
+  });
+  const remote = await idbFileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
   );

@@ -21,7 +21,6 @@ export function testAll(
         create: true,
         exclusive: true,
       });
-      console.log((await local.root.createReader().readEntries()).length);
       await synchronizer.synchronizeAll();
 
       localFE = await local.root.getFile("empty.txt");
