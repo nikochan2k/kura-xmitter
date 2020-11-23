@@ -215,19 +215,19 @@ export class Synchronizer {
 
   private setResult(
     fromAccessor: AbstractAccessor,
-    localToRemote: boolean,
+    from2To: boolean,
     result: SyncResult
   ) {
     let newResult: SyncResult;
     if (fromAccessor === this.localAccessor) {
       newResult = {
-        localToRemote: localToRemote,
-        remoteToLocal: !localToRemote,
+        localToRemote: from2To,
+        remoteToLocal: !from2To,
       };
     } else {
       newResult = {
-        localToRemote: !localToRemote,
-        remoteToLocal: localToRemote,
+        localToRemote: !from2To,
+        remoteToLocal: from2To,
       };
     }
     this.mergeResult(newResult, result);
@@ -683,6 +683,7 @@ export class Synchronizer {
             result.remoteToLocal = true;
           }
         } else if (fromDeleted == null && toDeleted == null) {
+          // prioritize older
           if (toModified < fromModified) {
             this.debug(
               fromAccessor,
@@ -690,7 +691,7 @@ export class Synchronizer {
               "dir[toObj => fromObj]",
               fullPath
             );
-            toFileNameIndex[name] = deepCopy(fromRecord);
+            fromFileNameIndex[name] = deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
           } else if (fromModified < toModified) {
             this.debug(
@@ -699,7 +700,7 @@ export class Synchronizer {
               "dir[fromObj => toObj]",
               fullPath
             );
-            fromFileNameIndex[name] = deepCopy(toRecord);
+            toFileNameIndex[name] = deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
           } else {
             this.debug(
