@@ -448,7 +448,7 @@ export class Synchronizer {
           delete toFileNameIndex[name];
           result.remoteToLocal = true;
         }
-        return;
+        return result;
       }
 
       const fromModified = fromRecord.modified;
