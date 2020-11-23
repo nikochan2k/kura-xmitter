@@ -139,7 +139,7 @@ export class Synchronizer {
 
   // #endregion Public Methods (2)
 
-  // #region Private Methods (9)
+  // #region Private Methods (8)
 
   private async copyFile(
     fromAccessor: AbstractAccessor,
@@ -358,7 +358,7 @@ export class Synchronizer {
       let fromRecord = fromFileNameIndex[name];
       let toRecord = toFileNameIndex[name];
       if (fromRecord == null && toRecord == null) {
-        this.warn(fromAccessor, toAccessor, name, new Error("No records"));
+        this.warn(fromAccessor, toAccessor, name, "No records");
         return result;
       }
 
@@ -382,13 +382,15 @@ export class Synchronizer {
       }
 
       if (fromObj != null && toObj == null) {
-        this.warn(fromAccessor, toAccessor, name, new Error("No toObj"));
+        this.warn(fromAccessor, toAccessor, name, "No toObj");
         toObj = deepCopy(fromObj);
+        toRecord.obj = toObj;
       } else if (toObj != null && fromObj == null) {
-        this.warn(fromAccessor, toAccessor, name, new Error("No fromObj"));
+        this.warn(fromAccessor, toAccessor, name, "No fromObj");
         fromObj = deepCopy(toObj);
+        fromRecord.obj = fromObj;
       } else if (fromObj == null && toObj == null) {
-        this.warn(fromAccessor, toAccessor, name, new Error("No obj"));
+        this.warn(fromAccessor, toAccessor, name, "No obj");
         return result;
       }
 
@@ -425,7 +427,7 @@ export class Synchronizer {
           fromAccessor,
           toAccessor,
           fullPath,
-          new Error("source is directory and destination is file")
+          "source is directory and destination is file"
         );
         return result;
       } else if (fromObj.size != null && toObj.size == null) {
@@ -433,7 +435,7 @@ export class Synchronizer {
           fromAccessor,
           toAccessor,
           fullPath,
-          new Error("source is file and destination is directory")
+          "source is file and destination is directory"
         );
         return result;
       }
@@ -694,11 +696,11 @@ export class Synchronizer {
     if (!this.options.verbose) {
       return;
     }
+    const message = e ? new String(e) : "";
     console.warn(
-      `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` +
-        JSON.stringify(e)
+      `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` + message
     );
   }
 
-  // #endregion Private Methods (9)
+  // #endregion Private Methods (8)
 }
