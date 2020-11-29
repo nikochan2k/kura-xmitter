@@ -702,10 +702,7 @@ export class Synchronizer {
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted < toModified) {
             await fromAccessor.doMakeDirectory(toObj);
-            fromFileNameIndex[name] = deepCopy({
-              ...toRecord,
-              modified: Date.now(),
-            });
+            fromFileNameIndex[name] = deepCopy(toRecord);
             await this.synchronizeChildren(
               toAccessor,
               fromAccessor,
@@ -753,10 +750,7 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             await toAccessor.doMakeDirectory(fromObj);
-            toFileNameIndex[name] = deepCopy({
-              ...fromRecord,
-              modified: Date.now(),
-            });
+            toFileNameIndex[name] = deepCopy(fromRecord);
             await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
@@ -805,10 +799,11 @@ export class Synchronizer {
           // prioritize older
           if (fromModified === Synchronizer.NOT_EXISTS) {
             await fromAccessor.doMakeDirectory(toObj);
-            fromFileNameIndex[name] = deepCopy({
-              ...toRecord,
-              modified: Date.now(),
-            });
+            if (!toRecord.modified) {
+              toRecord.modified = Date.now();
+              this.setResult(fromAccessor, true, result);
+            }
+            fromFileNameIndex[name] = deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
             this.debug(
               fromAccessor,
@@ -818,10 +813,11 @@ export class Synchronizer {
             );
           } else if (toModified === Synchronizer.NOT_EXISTS) {
             await toAccessor.doMakeDirectory(fromObj);
-            toFileNameIndex[name] = deepCopy({
-              ...fromRecord,
-              modified: Date.now(),
-            });
+            if (!fromRecord.modified) {
+              fromRecord.modified = Date.now();
+              this.setResult(fromAccessor, false, result);
+            }
+            toFileNameIndex[name] = deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
             this.debug(
               fromAccessor,
