@@ -702,6 +702,10 @@ export class Synchronizer {
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted < toModified) {
             await fromAccessor.doMakeDirectory(toObj);
+            fromFileNameIndex[name] = deepCopy({
+              ...toRecord,
+              modified: Date.now(),
+            });
             await this.synchronizeChildren(
               toAccessor,
               fromAccessor,
@@ -709,7 +713,6 @@ export class Synchronizer {
               true,
               notifier
             );
-            fromFileNameIndex[name] = deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
             this.debug(
               fromAccessor,
@@ -750,6 +753,10 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             await toAccessor.doMakeDirectory(fromObj);
+            toFileNameIndex[name] = deepCopy({
+              ...fromRecord,
+              modified: Date.now(),
+            });
             await this.synchronizeChildren(
               fromAccessor,
               toAccessor,
@@ -757,7 +764,6 @@ export class Synchronizer {
               true,
               notifier
             );
-            toFileNameIndex[name] = deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
             this.debug(
               fromAccessor,
@@ -798,51 +804,49 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted == null) {
           // prioritize older
           if (fromModified === Synchronizer.NOT_EXISTS) {
-            if (fromAccessor.hasDirectory()) {
-              await fromAccessor.doMakeDirectory(toObj);
-              fromFileNameIndex[name] = deepCopy(toRecord);
-              this.setResult(fromAccessor, false, result);
-              this.debug(
-                fromAccessor,
-                toAccessor,
-                "dir[?from,to => +from]",
-                fullPath
-              );
-            }
+            await fromAccessor.doMakeDirectory(toObj);
+            fromFileNameIndex[name] = deepCopy({
+              ...toRecord,
+              modified: Date.now(),
+            });
+            this.setResult(fromAccessor, false, result);
+            this.debug(
+              fromAccessor,
+              toAccessor,
+              "dir[?from,to => +from]",
+              fullPath
+            );
           } else if (toModified === Synchronizer.NOT_EXISTS) {
-            if (toAccessor.hasDirectory()) {
-              await toAccessor.doMakeDirectory(fromObj);
-              toFileNameIndex[name] = deepCopy(fromRecord);
-              this.setResult(fromAccessor, true, result);
-              this.debug(
-                fromAccessor,
-                toAccessor,
-                "dir[from,?to => +to]",
-                fullPath
-              );
-            }
+            await toAccessor.doMakeDirectory(fromObj);
+            toFileNameIndex[name] = deepCopy({
+              ...fromRecord,
+              modified: Date.now(),
+            });
+            this.setResult(fromAccessor, true, result);
+            this.debug(
+              fromAccessor,
+              toAccessor,
+              "dir[from,?to => +to]",
+              fullPath
+            );
           } else if (toModified < fromModified) {
-            if (fromAccessor.hasDirectory()) {
-              fromFileNameIndex[name] = deepCopy(toRecord);
-              this.setResult(fromAccessor, false, result);
-              this.debug(
-                fromAccessor,
-                toAccessor,
-                "dir[from,to (to < from) => +from]",
-                fullPath
-              );
-            }
+            fromFileNameIndex[name] = deepCopy(toRecord);
+            this.setResult(fromAccessor, false, result);
+            this.debug(
+              fromAccessor,
+              toAccessor,
+              "dir[from,to (to < from) => +from]",
+              fullPath
+            );
           } else if (fromModified < toModified) {
-            if (toAccessor.hasDirectory()) {
-              toFileNameIndex[name] = deepCopy(fromRecord);
-              this.setResult(fromAccessor, true, result);
-              this.debug(
-                fromAccessor,
-                toAccessor,
-                "dir[from,to (from < to) => +to]",
-                fullPath
-              );
-            }
+            toFileNameIndex[name] = deepCopy(fromRecord);
+            this.setResult(fromAccessor, true, result);
+            this.debug(
+              fromAccessor,
+              toAccessor,
+              "dir[from,to (from < to) => +to]",
+              fullPath
+            );
           } else {
             this.debug(
               fromAccessor,
