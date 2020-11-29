@@ -447,7 +447,7 @@ export class Synchronizer {
             this.debug(
               fromAccessor,
               toAccessor,
-              "file[toObj => ~fromObj]",
+              "file[toObj => ^fromObj]",
               fullPath
             );
             try {
@@ -468,25 +468,27 @@ export class Synchronizer {
               }
             }
           } else {
-            this.debug(fromAccessor, toAccessor, "file[~toObj]", fullPath);
             if (toModified !== Synchronizer.NOT_EXISTS) {
+              this.debug(fromAccessor, toAccessor, "file[^toObj]", fullPath);
               await this.deleteEntry(toAccessor, toObj);
-            }
-            if (toAccessor === this.remoteAccessor) {
-              toFileNameIndex[name] = deepCopy(fromRecord);
-              result.localToRemote = true;
-              delete fromFileNameIndex[name];
+              if (toAccessor === this.remoteAccessor) {
+                toFileNameIndex[name] = deepCopy(fromRecord);
+                delete fromFileNameIndex[name];
+                result.localToRemote = true;
+              } else {
+                delete toFileNameIndex[name];
+                result.remoteToLocal = true;
+              }
             } else {
-              delete toFileNameIndex[name];
+              this.debug(fromAccessor, toAccessor, "file[]", fullPath);
             }
-            result.remoteToLocal = true;
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             this.debug(
               fromAccessor,
               toAccessor,
-              "file[fromObj => ~toObj]",
+              "file[fromObj => ^toObj]",
               fullPath
             );
             try {
@@ -510,18 +512,20 @@ export class Synchronizer {
               }
             }
           } else {
-            this.debug(fromAccessor, toAccessor, "file[~toObj]", fullPath);
             if (fromModified !== Synchronizer.NOT_EXISTS) {
+              this.debug(toAccessor, fromAccessor, "file[^fromObj]", fullPath);
               await this.deleteEntry(fromAccessor, fromObj);
-            }
-            if (fromAccessor === this.remoteAccessor) {
-              fromFileNameIndex[name] = deepCopy(toRecord);
-              result.localToRemote = true;
-              delete toFileNameIndex[name];
+              if (fromAccessor === this.remoteAccessor) {
+                fromFileNameIndex[name] = deepCopy(toRecord);
+                delete toFileNameIndex[name];
+                result.localToRemote = true;
+              } else {
+                delete fromFileNameIndex[name];
+                result.remoteToLocal = true;
+              }
             } else {
-              delete fromFileNameIndex[name];
+              this.debug(toAccessor, fromAccessor, "file[]", fullPath);
             }
-            result.remoteToLocal = true;
           }
         } else if (fromDeleted == null && toDeleted == null) {
           if (toModified < fromModified) {
@@ -591,7 +595,7 @@ export class Synchronizer {
             this.debug(
               fromAccessor,
               toAccessor,
-              "dir[toObj => ~fromObj]",
+              "dir[toObj => ^fromObj]",
               fullPath
             );
             this.debug(null, fromAccessor, "doMakeDirectory", fullPath);
@@ -606,40 +610,27 @@ export class Synchronizer {
             fromFileNameIndex[name] = deepCopy(toRecord);
             this.setResult(fromAccessor, false, result);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[~toObj]", fullPath);
             if (toModified !== Synchronizer.NOT_EXISTS) {
+              this.debug(fromAccessor, toAccessor, "dir[^toObj]", fullPath);
               await this.deleteEntry(toAccessor, toObj);
-            }
-            if (toAccessor === this.remoteAccessor) {
-              toFileNameIndex[name] = deepCopy(fromRecord);
-              result.localToRemote = true;
-              if (fromModified !== Synchronizer.NOT_EXISTS) {
-                try {
-                  const indexDir = fromAccessor.createIndexDir(fullPath);
-                  await fromAccessor.removeRecursively({
-                    fullPath: indexDir,
-                    name: getName(indexDir),
-                  });
-                } catch (e) {
-                  if (e instanceof NotFoundError) {
-                    console.info(e, fullPath);
-                  } else {
-                    throw e;
-                  }
-                }
+              if (toAccessor === this.remoteAccessor) {
+                toFileNameIndex[name] = deepCopy(fromRecord);
+                delete fromFileNameIndex[name];
+                result.localToRemote = true;
+              } else {
+                delete toFileNameIndex[name];
+                result.remoteToLocal = true;
               }
-              delete fromFileNameIndex[name];
             } else {
-              delete toFileNameIndex[name];
+              this.debug(fromAccessor, toAccessor, "dir[]", fullPath);
             }
-            result.remoteToLocal = true;
           }
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             this.debug(
               fromAccessor,
               toAccessor,
-              "dir[fromObj => ~toObj]",
+              "dir[fromObj => ^toObj]",
               fullPath
             );
             this.debug(null, toAccessor, "doMakeDirectory", fullPath);
@@ -654,33 +645,20 @@ export class Synchronizer {
             toFileNameIndex[name] = deepCopy(fromRecord);
             this.setResult(fromAccessor, true, result);
           } else {
-            this.debug(fromAccessor, toAccessor, "dir[~fromObj]", fullPath);
             if (fromModified !== Synchronizer.NOT_EXISTS) {
+              this.debug(toAccessor, fromAccessor, "dir[^fromObj]", fullPath);
               await this.deleteEntry(fromAccessor, fromObj);
-            }
-            if (fromAccessor === this.remoteAccessor) {
-              fromFileNameIndex[name] = deepCopy(toRecord);
-              result.localToRemote = true;
-              if (toModified !== Synchronizer.NOT_EXISTS) {
-                try {
-                  const indexDir = toAccessor.createIndexDir(fullPath);
-                  await toAccessor.removeRecursively({
-                    fullPath: indexDir,
-                    name: getName(indexDir),
-                  });
-                } catch (e) {
-                  if (e instanceof NotFoundError) {
-                    console.info(e, fullPath);
-                  } else {
-                    throw e;
-                  }
-                }
+              if (fromAccessor === this.remoteAccessor) {
+                fromFileNameIndex[name] = deepCopy(toRecord);
+                delete toFileNameIndex[name];
+                result.localToRemote = true;
+              } else {
+                delete fromFileNameIndex[name];
+                result.remoteToLocal = true;
               }
-              delete toFileNameIndex[name];
             } else {
-              delete fromFileNameIndex[name];
+              this.debug(toAccessor, fromAccessor, "dir[]", fullPath);
             }
-            result.remoteToLocal = true;
           }
         } else if (fromDeleted == null && toDeleted == null) {
           // prioritize older
