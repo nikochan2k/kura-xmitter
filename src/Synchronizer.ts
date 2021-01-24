@@ -247,6 +247,12 @@ export class Synchronizer {
     recursively: boolean,
     notifier: Notifier
   ): Promise<SyncResult> {
+    const result: SyncResult = { localToRemote: false, remoteToLocal: false };
+
+    if (this.excludePathRegExp.test(dirPath)) {
+      return result;
+    }
+
     if (fromAccessor === this.remoteAccessor) {
       fromAccessor.clearFileNameIndex(dirPath);
     }
@@ -260,15 +266,8 @@ export class Synchronizer {
     notifier.incrementTotal(fromNames.length);
     const toNames = Object.keys(toFileNameIndex);
 
-    const result: SyncResult = { localToRemote: false, remoteToLocal: false };
-
     outer: for (const fromName of fromNames) {
       if (this.excludeNameRegExp.test(fromName)) {
-        notifier.incrementProcessed();
-        continue;
-      }
-      const fromPath = fromFileNameIndex[fromName].obj.fullPath;
-      if (this.excludePathRegExp.test(fromPath)) {
         notifier.incrementProcessed();
         continue;
       }
@@ -314,11 +313,6 @@ export class Synchronizer {
     notifier.incrementTotal(toNames.length);
     for (const toName of toNames) {
       if (this.excludeNameRegExp.test(toName)) {
-        notifier.incrementProcessed();
-        continue;
-      }
-      const toPath = toFileNameIndex[toName].obj.fullPath;
-      if (this.excludePathRegExp.test(toPath)) {
         notifier.incrementProcessed();
         continue;
       }
