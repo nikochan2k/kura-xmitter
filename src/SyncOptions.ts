@@ -1,7 +1,8 @@
 import { FileSystemObject } from "kura";
 
 export interface SyncOptions {
-  excludeFileNamePattern?: string;
+  excludeNamePattern?: string;
+  excludePathPattern?: string;
   onCopy?: (from: string, to: string, obj: FileSystemObject) => Promise<void>;
   verbose?: boolean;
 }

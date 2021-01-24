@@ -71,7 +71,8 @@ export class Synchronizer {
 
   private static NOT_EXISTS = 0;
 
-  private excludeFileNameRegExp: RegExp;
+  private excludeNameRegExp: RegExp;
+  private excludePathRegExp: RegExp;
   private localAccessor: AbstractAccessor;
   private remoteAccessor: AbstractAccessor;
 
@@ -84,10 +85,16 @@ export class Synchronizer {
     public remote: FileSystemAsync,
     private options: SyncOptions = {}
   ) {
-    if (options.excludeFileNamePattern == null)
-      options.excludeFileNamePattern = "^\\..+$|^$"; // TODO configurable
+    if (options.excludeNamePattern == null) {
+      options.excludeNamePattern = "^\\.|^$";
+    }
+    if (options.excludePathPattern == null) {
+      options.excludePathPattern = "\\/\\.";
+    }
     if (options.verbose == null) options.verbose = false;
-    this.excludeFileNameRegExp = new RegExp(options.excludeFileNamePattern);
+
+    this.excludeNameRegExp = new RegExp(options.excludeNamePattern);
+    this.excludePathRegExp = new RegExp(options.excludePathPattern);
 
     const localFS = local.filesystem;
     this.localAccessor = localFS.accessor;
@@ -256,7 +263,12 @@ export class Synchronizer {
     const result: SyncResult = { localToRemote: false, remoteToLocal: false };
 
     outer: for (const fromName of fromNames) {
-      if (this.excludeFileNameRegExp.test(fromName)) {
+      if (this.excludeNameRegExp.test(fromName)) {
+        notifier.incrementProcessed();
+        continue;
+      }
+      const fromPath = fromFileNameIndex[fromName].obj.fullPath;
+      if (this.excludePathRegExp.test(fromPath)) {
         notifier.incrementProcessed();
         continue;
       }
@@ -301,7 +313,12 @@ export class Synchronizer {
     // source not found
     notifier.incrementTotal(toNames.length);
     for (const toName of toNames) {
-      if (this.excludeFileNameRegExp.test(toName)) {
+      if (this.excludeNameRegExp.test(toName)) {
+        notifier.incrementProcessed();
+        continue;
+      }
+      const toPath = toFileNameIndex[toName].obj.fullPath;
+      if (this.excludePathRegExp.test(toPath)) {
         notifier.incrementProcessed();
         continue;
       }
