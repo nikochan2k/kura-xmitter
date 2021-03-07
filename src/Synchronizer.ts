@@ -315,12 +315,12 @@ export class Synchronizer {
       backward: fromToResult.backward || toFromResult.forward,
     };
     if (result.forward) {
-      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
-      await fromAccessor.saveFileNameIndex(dirPath);
-    }
-    if (result.backward) {
       toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
       await toAccessor.saveFileNameIndex(dirPath);
+    }
+    if (result.backward) {
+      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+      await fromAccessor.saveFileNameIndex(dirPath);
     }
 
     return result;
