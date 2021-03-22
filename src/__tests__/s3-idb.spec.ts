@@ -17,10 +17,6 @@ testAll(async () => {
   try {
     await s3.createBucket({ Bucket: bucket }).promise();
   } catch (e) {}
-  const list = await s3.listObjectsV2({ Bucket: bucket }).promise();
-  for (const content of list.Contents) {
-    await s3.deleteObject({ Bucket: bucket, Key: content.Key }).promise();
-  }
   const s3FileSystem = new S3LocalFileSystemAsync(
     options,
     "web-file-system-test",
@@ -31,6 +27,7 @@ testAll(async () => {
     window.PERSISTENT,
     Number.MAX_VALUE
   );
+  await local.filesystem.accessor.purge();
 
   const idbFileSystem = new IdbLocalFileSystemAsync("web-file-system-test", {
     index: true,
@@ -39,6 +36,7 @@ testAll(async () => {
     window.PERSISTENT,
     Number.MAX_VALUE
   );
+  await remote.filesystem.accessor.purge();
 
   return { local, remote };
 });
