@@ -199,7 +199,7 @@ export class Synchronizer {
           await accessor.removeRecursively(objToDelete);
         } else {
           await accessor.removeRecursively(objToDelete);
-          const indexDir = accessor.createIndexDir(fullPath);
+          const indexDir = await accessor.createIndexDir(fullPath);
           await accessor.removeRecursively({
             fullPath: indexDir,
             name: getName(fullPath),
