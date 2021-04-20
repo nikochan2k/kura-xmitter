@@ -200,6 +200,7 @@ export function testAll(
 
       try {
         await remote.root.getFile("/empty.txt");
+        fail("/empty.txt was note deleted");
       } catch (e) {
         expect(e).toBeInstanceOf(NotFoundError);
       }
@@ -210,6 +211,7 @@ export function testAll(
     }
   });
 
+  /*
   test("remove all", async (done) => {
     try {
       await local.root.removeRecursively();
@@ -423,4 +425,5 @@ export function testAll(
       done();
     }
   });
+  */
 }
