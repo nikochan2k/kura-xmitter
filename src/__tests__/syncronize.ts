@@ -1,8 +1,12 @@
-import { FileSystemAsync, NotFoundError } from "kura";
+import { FileSystemAsync, NotFoundError, Transferer } from "kura";
 import { Synchronizer } from "../Synchronizer";
 
 export function testAll(
-  prepare: () => Promise<{ local: FileSystemAsync; remote: FileSystemAsync }>
+  prepare: () => Promise<{
+    local: FileSystemAsync;
+    remote: FileSystemAsync;
+    transferer?: Transferer;
+  }>
 ) {
   let local: FileSystemAsync;
   let remote: FileSystemAsync;
@@ -12,7 +16,10 @@ export function testAll(
     const result = await prepare();
     local = result.local;
     remote = result.remote;
-    synchronizer = new Synchronizer(local, remote, { verbose: true });
+    synchronizer = new Synchronizer(local, remote, {
+      verbose: true,
+      transferer: result.transferer,
+    });
   });
 
   test("add a empty file, sync all", async (done) => {
