@@ -232,11 +232,11 @@ export class Synchronizer {
     }
 
     if (fromAccessor === this.remoteAccessor) {
-      await fromAccessor.clearFileNameIndex(dirPath);
+      fromAccessor.clearFileNameIndex(dirPath);
     }
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     if (toAccessor === this.remoteAccessor) {
-      await toAccessor.clearFileNameIndex(dirPath);
+      toAccessor.clearFileNameIndex(dirPath);
     }
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
