@@ -8,6 +8,7 @@ import {
   getName,
   NotFoundError,
   Record,
+  Transferer,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
@@ -67,7 +68,7 @@ export const SYNC_RESULT_FALSES: SyncResult = {
 };
 
 export class Synchronizer {
-  // #region Properties (5)
+  // #region Properties (6)
 
   private static NOT_EXISTS = 0;
 
@@ -75,8 +76,9 @@ export class Synchronizer {
   private excludePathRegExp: RegExp;
   private localAccessor: AbstractAccessor;
   private remoteAccessor: AbstractAccessor;
+  private transferer: Transferer;
 
-  // #endregion Properties (5)
+  // #endregion Properties (6)
 
   // #region Constructors (1)
 
@@ -106,6 +108,12 @@ export class Synchronizer {
     this.remoteAccessor = remoteFS.accessor;
     if (!this.remoteAccessor || !this.remoteAccessor.options.index) {
       throw new Error(`Destination filesystem "${remoteFS.name}" has no index`);
+    }
+
+    if (options.transferer) {
+      this.transferer = options.transferer;
+    } else {
+      this.transferer = new Transferer();
     }
   }
 
@@ -159,9 +167,8 @@ export class Synchronizer {
       await onCopy(fromAccessor.name, toAccessor.name, obj);
     }
 
-    const content = await fromAccessor.readContentInternal(obj);
     toAccessor.clearContentsCache(obj.fullPath);
-    await toAccessor.doWriteContent(obj.fullPath, content);
+    await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
   }
 
