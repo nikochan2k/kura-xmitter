@@ -160,7 +160,7 @@ export class Synchronizer {
     }
 
     const content = await fromAccessor.readContentInternal(obj);
-    await toAccessor.clearContentsCache(obj.fullPath);
+    toAccessor.clearContentsCache(obj.fullPath);
     await toAccessor.doWriteContent(obj.fullPath, content);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
   }
