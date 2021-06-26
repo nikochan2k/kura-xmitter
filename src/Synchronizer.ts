@@ -623,6 +623,8 @@ export class Synchronizer {
                       "file[from,to (!-from,!-to) => -from,-to]",
                       fullPath
                     );
+                  } else {
+                    throw e2;
                   }
                 }
               } else {
@@ -672,6 +674,8 @@ export class Synchronizer {
                       "file[from,to (!-from,!-to) => -from,-to]",
                       fullPath
                     );
+                  } else {
+                    throw e2;
                   }
                 }
               } else {
@@ -869,7 +873,7 @@ export class Synchronizer {
     if (!this.options.verbose) {
       return;
     }
-    const message = e ? new String(e) : "";
+    const message = e ? JSON.stringify(e) : "";
     console.warn(
       `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` + message
     );
