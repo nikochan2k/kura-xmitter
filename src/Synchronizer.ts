@@ -241,10 +241,12 @@ export class Synchronizer {
     if (fromAccessor === this.remoteAccessor) {
       fromAccessor.clearFileNameIndex(dirPath);
     }
+    await fromAccessor.getObjects(dirPath);
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     if (toAccessor === this.remoteAccessor) {
       toAccessor.clearFileNameIndex(dirPath);
     }
+    await toAccessor.getObjects(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
     const fromNames = Object.keys(fromFileNameIndex);
