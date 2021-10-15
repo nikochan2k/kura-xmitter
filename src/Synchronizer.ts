@@ -77,6 +77,7 @@ export class Synchronizer {
   private localAccessor: AbstractAccessor;
   private remoteAccessor: AbstractAccessor;
   private transferer: Transferer;
+  private objectsHistory: Set<string>;
 
   // #endregion Properties (6)
 
@@ -109,6 +110,8 @@ export class Synchronizer {
     if (!this.remoteAccessor || !this.remoteAccessor.options.index) {
       throw new Error(`Destination filesystem "${remoteFS.name}" has no index`);
     }
+
+    this.objectsHistory = new Set();
 
     if (options.transferer) {
       this.transferer = options.transferer;
@@ -240,13 +243,19 @@ export class Synchronizer {
 
     if (fromAccessor === this.remoteAccessor) {
       fromAccessor.clearFileNameIndex(dirPath);
+      if (!this.objectsHistory.has(dirPath)) {
+        await fromAccessor.getObjects(dirPath);
+        this.objectsHistory.add(dirPath);
+      }
     }
-    await fromAccessor.getObjects(dirPath);
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     if (toAccessor === this.remoteAccessor) {
       toAccessor.clearFileNameIndex(dirPath);
+      if (!this.objectsHistory.has(dirPath)) {
+        await toAccessor.getObjects(dirPath);
+        this.objectsHistory.add(dirPath);
+      }
     }
-    await toAccessor.getObjects(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
     const fromNames = Object.keys(fromFileNameIndex);
