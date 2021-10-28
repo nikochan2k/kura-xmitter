@@ -264,47 +264,57 @@ export class Synchronizer {
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
+
+    const promises: Promise<void>[] = [];
     outer: for (const fromName of fromNames) {
       if (this.excludeNameRegExp.test(fromName)) {
         notifier.incrementProcessed();
         continue;
       }
 
-      // source to destination
       for (let i = 0, end = toNames.length; i < end; i++) {
         const toName = toNames[i];
         if (fromName !== toName) {
           continue;
         }
 
-        const oneResult = await this.synchronizeOne(
-          fromAccessor,
-          fromFileNameIndex,
-          toAccessor,
-          toFileNameIndex,
-          fromName,
-          recursively,
-          notifier
+        promises.push(
+          // source to destination
+          (async () => {
+            const oneResult = await this.synchronizeOne(
+              fromAccessor,
+              fromFileNameIndex,
+              toAccessor,
+              toFileNameIndex,
+              fromName,
+              recursively,
+              notifier
+            );
+            this.mergeResult(oneResult, fromToResult);
+            notifier.incrementProcessed();
+          })()
         );
-        this.mergeResult(oneResult, fromToResult);
 
         toNames.splice(i, 1);
-        notifier.incrementProcessed();
         continue outer;
       }
 
-      // destination not found.
-      const oneResult = await this.synchronizeOne(
-        fromAccessor,
-        fromFileNameIndex,
-        toAccessor,
-        toFileNameIndex,
-        fromName,
-        recursively,
-        notifier
+      promises.push(
+        (async () => {
+          // destination not found.
+          const oneResult = await this.synchronizeOne(
+            fromAccessor,
+            fromFileNameIndex,
+            toAccessor,
+            toFileNameIndex,
+            fromName,
+            recursively,
+            notifier
+          );
+          this.mergeResult(oneResult, fromToResult);
+          notifier.incrementProcessed();
+        })()
       );
-      this.mergeResult(oneResult, fromToResult);
-      notifier.incrementProcessed();
     }
 
     // source not found
@@ -315,18 +325,25 @@ export class Synchronizer {
         continue;
       }
 
-      const oneResult = await this.synchronizeOne(
-        toAccessor,
-        toFileNameIndex,
-        fromAccessor,
-        fromFileNameIndex,
-        toName,
-        recursively,
-        notifier
+      promises.push(
+        // source to destination
+        (async () => {
+          const oneResult = await this.synchronizeOne(
+            toAccessor,
+            toFileNameIndex,
+            fromAccessor,
+            fromFileNameIndex,
+            toName,
+            recursively,
+            notifier
+          );
+          this.mergeResult(oneResult, toFromResult);
+          notifier.incrementProcessed();
+        })()
       );
-      this.mergeResult(oneResult, toFromResult);
-      notifier.incrementProcessed();
     }
+
+    await Promise.all(promises);
 
     const result: SyncResult = {
       forward: fromToResult.forward || toFromResult.backward,

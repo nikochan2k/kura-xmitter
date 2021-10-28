@@ -17,7 +17,7 @@ export function testAll(
     local = result.local;
     remote = result.remote;
     synchronizer = new Synchronizer(local, remote, {
-      verbose: true,
+      verbose: false,
       transferer: result.transferer,
     });
   });
