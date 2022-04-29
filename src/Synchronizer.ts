@@ -21,7 +21,7 @@ interface SyncResult {
   // #endregion Properties (2)
 }
 
-type Filter = (fromRecord: Record, toRecord: Record) => boolean;
+export type Filter = (fromRecord: Record, toRecord: Record) => boolean;
 
 const DEFAULT_FILTER: Filter = () => false;
 
