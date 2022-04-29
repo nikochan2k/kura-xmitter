@@ -21,6 +21,10 @@ interface SyncResult {
   // #endregion Properties (2)
 }
 
+type Filter = (fromRecord: Record, toRecord: Record) => boolean;
+
+const DEFAULT_FILTER: Filter = () => false;
+
 export class Notifier {
   // #region Properties (2)
 
@@ -61,6 +65,8 @@ export class Notifier {
 
   // #endregion Public Methods (2)
 }
+
+const DEFAULT_NOTIFIER = new Notifier();
 
 export const SYNC_RESULT_FALSES: SyncResult = {
   forward: false,
@@ -131,7 +137,8 @@ export class Synchronizer {
   public async synchronizeDirectory(
     dirPath: string,
     recursively: boolean,
-    notifier = new Notifier()
+    notifier = DEFAULT_NOTIFIER,
+    filter = DEFAULT_FILTER
   ): Promise<SyncResult> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
@@ -142,7 +149,8 @@ export class Synchronizer {
       this.remoteAccessor,
       dirPath,
       recursively,
-      notifier
+      notifier,
+      filter
     );
 
     this.debug(
@@ -235,7 +243,8 @@ export class Synchronizer {
     toAccessor: AbstractAccessor,
     dirPath: string,
     recursively: boolean,
-    notifier: Notifier
+    notifier: Notifier,
+    filter: Filter
   ): Promise<SyncResult> {
     if (this.excludePathRegExp.test(dirPath)) {
       return { forward: false, backward: false };
@@ -288,7 +297,8 @@ export class Synchronizer {
               toFileNameIndex,
               fromName,
               recursively,
-              notifier
+              notifier,
+              filter
             );
             this.mergeResult(oneResult, fromToResult);
             notifier.incrementProcessed();
@@ -309,7 +319,8 @@ export class Synchronizer {
             toFileNameIndex,
             fromName,
             recursively,
-            notifier
+            notifier,
+            filter
           );
           this.mergeResult(oneResult, fromToResult);
           notifier.incrementProcessed();
@@ -335,7 +346,8 @@ export class Synchronizer {
             fromFileNameIndex,
             toName,
             recursively,
-            notifier
+            notifier,
+            filter
           );
           this.mergeResult(oneResult, toFromResult);
           notifier.incrementProcessed();
@@ -368,7 +380,8 @@ export class Synchronizer {
     toFileNameIndex: FileNameIndex,
     name: string,
     recursively: boolean,
-    notifier: Notifier
+    notifier: Notifier,
+    filter: Filter
   ): Promise<SyncResult> {
     const result: SyncResult = { forward: false, backward: false };
 
@@ -377,6 +390,9 @@ export class Synchronizer {
       let toRecord = toFileNameIndex[name];
       if (fromRecord == null && toRecord == null) {
         this.warn(fromAccessor, toAccessor, name, "No records");
+        return result;
+      }
+      if (filter(fromRecord, toRecord)) {
         return result;
       }
 
@@ -730,7 +746,8 @@ export class Synchronizer {
               fromAccessor,
               fullPath,
               true,
-              notifier
+              notifier,
+              filter
             );
             result.backward = true;
             this.debug(
@@ -778,7 +795,8 @@ export class Synchronizer {
               toAccessor,
               fullPath,
               true,
-              notifier
+              notifier,
+              filter
             );
             result.forward = true;
             this.debug(
@@ -880,7 +898,8 @@ export class Synchronizer {
               toAccessor,
               fullPath,
               recursively,
-              notifier
+              notifier,
+              filter
             );
           }
         }
