@@ -21,9 +21,27 @@ interface SyncResult {
   // #endregion Properties (2)
 }
 
-export type Filter = (fromRecord: Record, toRecord: Record) => boolean;
+export interface Handler {
+  beforeCopy: (
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    obj: FileSystemObject
+  ) => boolean;
+  afterCopy: (
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    obj: FileSystemObject
+  ) => void;
+  beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
+  afterDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => void;
+}
 
-const DEFAULT_FILTER: Filter = () => false;
+const DEFAULT_HANDLER: Handler = {
+  beforeCopy: () => false,
+  afterCopy: () => {},
+  beforeDelete: () => false,
+  afterDelete: () => {},
+};
 
 export class Notifier {
   // #region Properties (2)
@@ -138,7 +156,7 @@ export class Synchronizer {
     dirPath: string,
     recursively: boolean,
     notifier = DEFAULT_NOTIFIER,
-    filter = DEFAULT_FILTER
+    filter = DEFAULT_HANDLER
   ): Promise<SyncResult> {
     if (!dirPath) {
       dirPath = DIR_SEPARATOR;
@@ -170,16 +188,18 @@ export class Synchronizer {
   private async copyFile(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
-    fromRecord: Record
+    fromRecord: Record,
+    handler: Handler
   ) {
     const obj = fromRecord.obj;
-    const onCopy = this.options.onCopy;
-    if (onCopy) {
-      await onCopy(fromAccessor.name, toAccessor.name, obj);
+    if (handler.beforeCopy(fromAccessor, toAccessor, obj)) {
+      return;
     }
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
+
+    handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
   }
 
@@ -201,11 +221,19 @@ export class Synchronizer {
     }
   }
 
-  private async deleteEntry(accessor: AbstractAccessor, obj: FileSystemObject) {
+  private async deleteEntry(
+    accessor: AbstractAccessor,
+    obj: FileSystemObject,
+    handler: Handler
+  ) {
     const fullPath = obj.fullPath;
     const isFile = obj.size != null;
     this.debug(null, accessor, "delete", fullPath);
     try {
+      if (handler.beforeDelete(accessor, obj)) {
+        return;
+      }
+
       if (isFile) {
         await accessor.delete(fullPath, true);
       } else {
@@ -224,6 +252,8 @@ export class Synchronizer {
           });
         }
       }
+
+      handler.afterDelete(accessor, obj);
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.info(e, fullPath);
@@ -244,7 +274,7 @@ export class Synchronizer {
     dirPath: string,
     recursively: boolean,
     notifier: Notifier,
-    filter: Filter
+    handler: Handler
   ): Promise<SyncResult> {
     if (this.excludePathRegExp.test(dirPath)) {
       return { forward: false, backward: false };
@@ -298,7 +328,7 @@ export class Synchronizer {
               fromName,
               recursively,
               notifier,
-              filter
+              handler
             );
             this.mergeResult(oneResult, fromToResult);
             notifier.incrementProcessed();
@@ -320,7 +350,7 @@ export class Synchronizer {
             fromName,
             recursively,
             notifier,
-            filter
+            handler
           );
           this.mergeResult(oneResult, fromToResult);
           notifier.incrementProcessed();
@@ -347,7 +377,7 @@ export class Synchronizer {
             toName,
             recursively,
             notifier,
-            filter
+            handler
           );
           this.mergeResult(oneResult, toFromResult);
           notifier.incrementProcessed();
@@ -381,7 +411,7 @@ export class Synchronizer {
     name: string,
     recursively: boolean,
     notifier: Notifier,
-    filter: Filter
+    handler: Handler
   ): Promise<SyncResult> {
     const result: SyncResult = { forward: false, backward: false };
 
@@ -390,9 +420,6 @@ export class Synchronizer {
       let toRecord = toFileNameIndex[name];
       if (fromRecord == null && toRecord == null) {
         this.warn(fromAccessor, toAccessor, name, "No records");
-        return result;
-      }
-      if (filter(fromRecord, toRecord)) {
         return result;
       }
 
@@ -503,7 +530,7 @@ export class Synchronizer {
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted < toModified) {
             try {
-              await this.copyFile(toAccessor, fromAccessor, toRecord);
+              await this.copyFile(toAccessor, fromAccessor, toRecord, handler);
               fromFileNameIndex[name] = deepCopy(toRecord);
               result.backward = true;
               this.debug(
@@ -532,7 +559,7 @@ export class Synchronizer {
             }
           } else {
             if (toModified !== Synchronizer.NOT_EXISTS) {
-              await this.deleteEntry(toAccessor, toObj);
+              await this.deleteEntry(toAccessor, toObj, handler);
               if (toAccessor === this.remoteAccessor) {
                 toFileNameIndex[name] = deepCopy(fromRecord);
                 delete fromFileNameIndex[name];
@@ -563,7 +590,12 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             try {
-              await this.copyFile(fromAccessor, toAccessor, fromRecord);
+              await this.copyFile(
+                fromAccessor,
+                toAccessor,
+                fromRecord,
+                handler
+              );
               toFileNameIndex[name] = deepCopy(fromRecord);
               result.forward = true;
               this.debug(
@@ -595,7 +627,7 @@ export class Synchronizer {
             }
           } else {
             if (fromModified !== Synchronizer.NOT_EXISTS) {
-              await this.deleteEntry(fromAccessor, fromObj);
+              await this.deleteEntry(fromAccessor, fromObj, handler);
               if (fromAccessor === this.remoteAccessor) {
                 fromFileNameIndex[name] = deepCopy(toRecord);
                 delete toFileNameIndex[name];
@@ -626,7 +658,12 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted == null) {
           if (toModified < fromModified) {
             try {
-              await this.copyFile(fromAccessor, toAccessor, fromRecord);
+              await this.copyFile(
+                fromAccessor,
+                toAccessor,
+                fromRecord,
+                handler
+              );
               toFileNameIndex[name] = deepCopy(fromRecord);
               result.forward = true;
               this.debug(
@@ -638,7 +675,12 @@ export class Synchronizer {
             } catch (e) {
               if (e instanceof NotFoundError) {
                 try {
-                  await this.copyFile(toAccessor, fromAccessor, toRecord);
+                  await this.copyFile(
+                    toAccessor,
+                    fromAccessor,
+                    toRecord,
+                    handler
+                  );
                   fromFileNameIndex[name] = deepCopy(toRecord);
                   result.backward = true;
                   this.debug(
@@ -649,8 +691,8 @@ export class Synchronizer {
                   );
                 } catch (e2) {
                   if (e2 instanceof NotFoundError) {
-                    await this.deleteEntry(fromAccessor, fromObj);
-                    await this.deleteEntry(toAccessor, toObj);
+                    await this.deleteEntry(fromAccessor, fromObj, handler);
+                    await this.deleteEntry(toAccessor, toObj, handler);
                     const now = Date.now();
                     if (fromAccessor === this.localAccessor) {
                       delete fromFileNameIndex[name];
@@ -677,7 +719,7 @@ export class Synchronizer {
             }
           } else if (fromModified < toModified) {
             try {
-              await this.copyFile(toAccessor, fromAccessor, toRecord);
+              await this.copyFile(toAccessor, fromAccessor, toRecord, handler);
               fromFileNameIndex[name] = deepCopy(toRecord);
               result.backward = true;
               this.debug(
@@ -689,7 +731,12 @@ export class Synchronizer {
             } catch (e) {
               if (e instanceof NotFoundError) {
                 try {
-                  await this.copyFile(fromAccessor, toAccessor, toRecord);
+                  await this.copyFile(
+                    fromAccessor,
+                    toAccessor,
+                    toRecord,
+                    handler
+                  );
                   toFileNameIndex[name] = deepCopy(fromRecord);
                   result.forward = true;
                   this.debug(
@@ -700,8 +747,8 @@ export class Synchronizer {
                   );
                 } catch (e2) {
                   if (e2 instanceof NotFoundError) {
-                    await this.deleteEntry(fromAccessor, fromObj);
-                    await this.deleteEntry(toAccessor, toObj);
+                    await this.deleteEntry(fromAccessor, fromObj, handler);
+                    await this.deleteEntry(toAccessor, toObj, handler);
                     const now = Date.now();
                     if (fromAccessor === this.localAccessor) {
                       delete fromFileNameIndex[name];
@@ -747,7 +794,7 @@ export class Synchronizer {
               fullPath,
               true,
               notifier,
-              filter
+              handler
             );
             result.backward = true;
             this.debug(
@@ -758,7 +805,7 @@ export class Synchronizer {
             );
           } else {
             if (toModified !== Synchronizer.NOT_EXISTS) {
-              await this.deleteEntry(toAccessor, toObj);
+              await this.deleteEntry(toAccessor, toObj, handler);
               if (toAccessor === this.remoteAccessor) {
                 toFileNameIndex[name] = deepCopy(fromRecord); // modify remote
                 delete fromFileNameIndex[name]; // modify local
@@ -796,7 +843,7 @@ export class Synchronizer {
               fullPath,
               true,
               notifier,
-              filter
+              handler
             );
             result.forward = true;
             this.debug(
@@ -807,7 +854,7 @@ export class Synchronizer {
             );
           } else {
             if (fromModified !== Synchronizer.NOT_EXISTS) {
-              await this.deleteEntry(fromAccessor, fromObj);
+              await this.deleteEntry(fromAccessor, fromObj, handler);
               if (fromAccessor === this.remoteAccessor) {
                 fromFileNameIndex[name] = deepCopy(toRecord); // modify remote
                 delete toFileNameIndex[name]; // modify local
@@ -899,7 +946,7 @@ export class Synchronizer {
               fullPath,
               recursively,
               notifier,
-              filter
+              handler
             );
           }
         }
