@@ -34,6 +34,7 @@ export interface Handler {
   ) => void;
   beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
   afterDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => void;
+  completed: () => void;
 }
 
 const DEFAULT_HANDLER: Handler = {
@@ -41,6 +42,7 @@ const DEFAULT_HANDLER: Handler = {
   afterCopy: () => {},
   beforeDelete: () => false,
   afterDelete: () => {},
+  completed: () => {},
 };
 
 export class Notifier {
@@ -156,29 +158,33 @@ export class Synchronizer {
     dirPath: string,
     recursively: boolean,
     notifier = DEFAULT_NOTIFIER,
-    filter = DEFAULT_HANDLER
+    handler = DEFAULT_HANDLER
   ): Promise<SyncResult> {
-    if (!dirPath) {
-      dirPath = DIR_SEPARATOR;
+    try {
+      if (!dirPath) {
+        dirPath = DIR_SEPARATOR;
+      }
+
+      const result = await this.synchronizeChildren(
+        this.localAccessor,
+        this.remoteAccessor,
+        dirPath,
+        recursively,
+        notifier,
+        handler
+      );
+
+      this.debug(
+        this.localAccessor,
+        this.remoteAccessor,
+        `SyncResult: localToRemote=${result.forward}, remoteToLocal=${result.backward}`,
+        dirPath
+      );
+
+      return result;
+    } finally {
+      handler.completed();
     }
-
-    const result = await this.synchronizeChildren(
-      this.localAccessor,
-      this.remoteAccessor,
-      dirPath,
-      recursively,
-      notifier,
-      filter
-    );
-
-    this.debug(
-      this.localAccessor,
-      this.remoteAccessor,
-      `SyncResult: localToRemote=${result.forward}, remoteToLocal=${result.backward}`,
-      dirPath
-    );
-
-    return result;
   }
 
   // #endregion Public Methods (2)
