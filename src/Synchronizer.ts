@@ -34,7 +34,7 @@ export interface Handler {
   ) => void;
   beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
   afterDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => void;
-  completed: () => void;
+  completed: (error?: any) => void;
 }
 
 const DEFAULT_HANDLER: Handler = {
@@ -181,9 +181,10 @@ export class Synchronizer {
         dirPath
       );
 
-      return result;
-    } finally {
       handler.completed();
+      return result;
+    } catch (e) {
+      handler.completed(e);
     }
   }
 
