@@ -22,23 +22,29 @@ export interface Handler {
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
-  ) => void;
-  afterDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => void;
+  ) => Promise<void>;
+  afterDelete: (
+    accessor: AbstractAccessor,
+    obj: FileSystemObject
+  ) => Promise<void>;
   beforeCopy: (
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
-  ) => boolean;
-  beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
-  completed: (error?: any) => void;
+  ) => Promise<boolean>;
+  beforeDelete: (
+    accessor: AbstractAccessor,
+    obj: FileSystemObject
+  ) => Promise<boolean>;
+  completed: (error?: any) => Promise<void>;
 }
 
 const DEFAULT_HANDLER: Handler = {
-  beforeCopy: () => false,
-  afterCopy: () => {},
-  beforeDelete: () => false,
-  afterDelete: () => {},
-  completed: () => {},
+  beforeCopy: async () => false,
+  afterCopy: async () => {},
+  beforeDelete: async () => false,
+  afterDelete: async () => {},
+  completed: async () => {},
 };
 
 export class Notifier {
@@ -151,10 +157,10 @@ export class Synchronizer {
         dirPath
       );
 
-      handler.completed();
+      await handler.completed();
       return result;
     } catch (e) {
-      handler.completed(e);
+      await handler.completed(e);
     }
   }
 
@@ -165,14 +171,14 @@ export class Synchronizer {
     handler: Handler
   ) {
     const obj = fromRecord.obj;
-    if (handler.beforeCopy(fromAccessor, toAccessor, obj)) {
+    if (await handler.beforeCopy(fromAccessor, toAccessor, obj)) {
       return;
     }
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
 
-    handler.afterCopy(fromAccessor, toAccessor, obj);
+    await handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
   }
 
@@ -203,7 +209,7 @@ export class Synchronizer {
     const isFile = obj.size != null;
     this.debug(null, accessor, "delete", fullPath);
     try {
-      if (handler.beforeDelete(accessor, obj)) {
+      if (await handler.beforeDelete(accessor, obj)) {
         return;
       }
 
@@ -226,7 +232,7 @@ export class Synchronizer {
         }
       }
 
-      handler.afterDelete(accessor, obj);
+      await handler.afterDelete(accessor, obj);
     } catch (e) {
       if (e instanceof NotFoundError) {
         console.info(e, fullPath);
