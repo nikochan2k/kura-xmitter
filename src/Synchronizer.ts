@@ -241,18 +241,12 @@ export class Synchronizer {
     merged.backward = merged.backward || result.backward;
   }
 
-  private async saveFileNameIndex(
+  private async saveLocalFileNameIndex(
     result: SyncResult,
     fromAccessor: AbstractAccessor,
-    toAccessor: AbstractAccessor,
     dirPath: string,
-    fromFileNameIndex: FileNameIndex,
-    toFileNameIndex: FileNameIndex
+    fromFileNameIndex: FileNameIndex
   ) {
-    if (result.forward) {
-      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
-      await toAccessor.saveFileNameIndex(dirPath);
-    }
     if (result.backward) {
       fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
       await fromAccessor.saveFileNameIndex(dirPath);
@@ -317,13 +311,11 @@ export class Synchronizer {
           notifier,
           handler
         );
-        await this.saveFileNameIndex(
+        await this.saveLocalFileNameIndex(
           oneResult,
           fromAccessor,
-          toAccessor,
           dirPath,
-          fromFileNameIndex,
-          toFileNameIndex
+          fromFileNameIndex
         );
         this.mergeResult(oneResult, fromToResult);
         notifier.incrementProcessed();
@@ -343,13 +335,11 @@ export class Synchronizer {
         notifier,
         handler
       );
-      await this.saveFileNameIndex(
+      await this.saveLocalFileNameIndex(
         oneResult,
         fromAccessor,
-        toAccessor,
         dirPath,
-        fromFileNameIndex,
-        toFileNameIndex
+        fromFileNameIndex
       );
       this.mergeResult(oneResult, fromToResult);
       notifier.incrementProcessed();
@@ -373,13 +363,11 @@ export class Synchronizer {
         notifier,
         handler
       );
-      await this.saveFileNameIndex(
+      await this.saveLocalFileNameIndex(
         oneResult,
         fromAccessor,
-        toAccessor,
         dirPath,
-        fromFileNameIndex,
-        toFileNameIndex
+        fromFileNameIndex
       );
       this.mergeResult(oneResult, toFromResult);
       notifier.incrementProcessed();
@@ -389,6 +377,11 @@ export class Synchronizer {
       forward: fromToResult.forward || toFromResult.backward,
       backward: fromToResult.backward || toFromResult.forward,
     };
+
+    if (result.forward) {
+      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+      await toAccessor.saveFileNameIndex(dirPath);
+    }
 
     return result;
   }
