@@ -13,27 +13,23 @@ import {
 import { SyncOptions } from "./SyncOptions";
 
 interface SyncResult {
-  // #region Properties (2)
-
   backward: boolean;
   forward: boolean;
-
-  // #endregion Properties (2)
 }
 
 export interface Handler {
-  beforeCopy: (
-    fromAccessor: AbstractAccessor,
-    toAccessor: AbstractAccessor,
-    obj: FileSystemObject
-  ) => boolean;
   afterCopy: (
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
     obj: FileSystemObject
   ) => void;
-  beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
   afterDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => void;
+  beforeCopy: (
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    obj: FileSystemObject
+  ) => boolean;
+  beforeDelete: (accessor: AbstractAccessor, obj: FileSystemObject) => boolean;
   completed: (error?: any) => void;
 }
 
@@ -46,20 +42,10 @@ const DEFAULT_HANDLER: Handler = {
 };
 
 export class Notifier {
-  // #region Properties (2)
-
   private _processed = 0;
   private _total = 0;
 
-  // #endregion Properties (2)
-
-  // #region Constructors (1)
-
   constructor(private _callback = (processed: number, total: number) => {}) {}
-
-  // #endregion Constructors (1)
-
-  // #region Public Accessors (2)
 
   public get processed() {
     return this._processed;
@@ -68,10 +54,6 @@ export class Notifier {
   public get total() {
     return this._total;
   }
-
-  // #endregion Public Accessors (2)
-
-  // #region Public Methods (2)
 
   public incrementProcessed(count = 1) {
     this._processed = this._processed + count;
@@ -82,8 +64,6 @@ export class Notifier {
     this._total = this._total + count;
     this._callback(this._processed, this._total);
   }
-
-  // #endregion Public Methods (2)
 }
 
 const DEFAULT_NOTIFIER = new Notifier();
@@ -94,20 +74,14 @@ export const SYNC_RESULT_FALSES: SyncResult = {
 };
 
 export class Synchronizer {
-  // #region Properties (6)
-
   private static NOT_EXISTS = 0;
 
   private excludeNameRegExp: RegExp;
   private excludePathRegExp: RegExp;
   private localAccessor: AbstractAccessor;
+  private objectsHistory: Set<string>;
   private remoteAccessor: AbstractAccessor;
   private transferer: Transferer;
-  private objectsHistory: Set<string>;
-
-  // #endregion Properties (6)
-
-  // #region Constructors (1)
 
   constructor(
     public local: FileSystemAsync,
@@ -146,10 +120,6 @@ export class Synchronizer {
     }
   }
 
-  // #endregion Constructors (1)
-
-  // #region Public Methods (2)
-
   public async synchronizeAll() {
     return await this.synchronizeDirectory(this.local.root.fullPath, true);
   }
@@ -187,10 +157,6 @@ export class Synchronizer {
       handler.completed(e);
     }
   }
-
-  // #endregion Public Methods (2)
-
-  // #region Private Methods (7)
 
   private async copyFile(
     fromAccessor: AbstractAccessor,
@@ -275,6 +241,24 @@ export class Synchronizer {
     merged.backward = merged.backward || result.backward;
   }
 
+  private async saveFileNameIndex(
+    result: SyncResult,
+    fromAccessor: AbstractAccessor,
+    toAccessor: AbstractAccessor,
+    dirPath: string,
+    fromFileNameIndex: FileNameIndex,
+    toFileNameIndex: FileNameIndex
+  ) {
+    if (result.forward) {
+      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+      await toAccessor.saveFileNameIndex(dirPath);
+    }
+    if (result.backward) {
+      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+      await fromAccessor.saveFileNameIndex(dirPath);
+    }
+  }
+
   private async synchronizeChildren(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
@@ -333,6 +317,14 @@ export class Synchronizer {
           notifier,
           handler
         );
+        await this.saveFileNameIndex(
+          oneResult,
+          fromAccessor,
+          toAccessor,
+          dirPath,
+          fromFileNameIndex,
+          toFileNameIndex
+        );
         this.mergeResult(oneResult, fromToResult);
         notifier.incrementProcessed();
 
@@ -350,6 +342,14 @@ export class Synchronizer {
         recursively,
         notifier,
         handler
+      );
+      await this.saveFileNameIndex(
+        oneResult,
+        fromAccessor,
+        toAccessor,
+        dirPath,
+        fromFileNameIndex,
+        toFileNameIndex
       );
       this.mergeResult(oneResult, fromToResult);
       notifier.incrementProcessed();
@@ -373,6 +373,14 @@ export class Synchronizer {
         notifier,
         handler
       );
+      await this.saveFileNameIndex(
+        oneResult,
+        fromAccessor,
+        toAccessor,
+        dirPath,
+        fromFileNameIndex,
+        toFileNameIndex
+      );
       this.mergeResult(oneResult, toFromResult);
       notifier.incrementProcessed();
     }
@@ -381,14 +389,6 @@ export class Synchronizer {
       forward: fromToResult.forward || toFromResult.backward,
       backward: fromToResult.backward || toFromResult.forward,
     };
-    if (result.forward) {
-      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
-      await toAccessor.saveFileNameIndex(dirPath);
-    }
-    if (result.backward) {
-      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
-      await fromAccessor.saveFileNameIndex(dirPath);
-    }
 
     return result;
   }
@@ -962,6 +962,4 @@ export class Synchronizer {
       `${fromAccessor.name} => ${toAccessor.name}: ${path}\n` + message
     );
   }
-
-  // #endregion Private Methods (7)
 }
