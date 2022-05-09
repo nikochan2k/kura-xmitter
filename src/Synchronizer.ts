@@ -288,9 +288,13 @@ export class Synchronizer {
     }
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
-    const fromNames = Object.keys(fromFileNameIndex);
+    const fromNames = Object.values(fromFileNameIndex)
+      .sort((a, b) => b.modified - a.modified)
+      .map((record) => record.obj.name);
     notifier.incrementTotal(fromNames.length);
-    const toNames = Object.keys(toFileNameIndex);
+    const toNames = Object.values(toFileNameIndex)
+      .sort((a, b) => b.modified - a.modified)
+      .map((record) => record.obj.name);
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
