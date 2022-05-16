@@ -177,6 +177,7 @@ export class Synchronizer {
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
+    fromRecord.modified = Date.now();
 
     await handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
@@ -247,18 +248,6 @@ export class Synchronizer {
     merged.backward = merged.backward || result.backward;
   }
 
-  private async saveLocalFileNameIndex(
-    result: SyncResult,
-    fromAccessor: AbstractAccessor,
-    dirPath: string,
-    fromFileNameIndex: FileNameIndex
-  ) {
-    if (result.backward) {
-      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
-      await fromAccessor.saveFileNameIndex(dirPath);
-    }
-  }
-
   private async synchronizeChildren(
     fromAccessor: AbstractAccessor,
     toAccessor: AbstractAccessor,
@@ -288,13 +277,9 @@ export class Synchronizer {
     }
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
-    const fromNames = Object.values(fromFileNameIndex)
-      .sort((a, b) => b.modified - a.modified)
-      .map((record) => record.obj.name);
+    const fromNames = Object.keys(fromFileNameIndex);
     notifier.incrementTotal(fromNames.length);
-    const toNames = Object.values(toFileNameIndex)
-      .sort((a, b) => b.modified - a.modified)
-      .map((record) => record.obj.name);
+    const toNames = Object.keys(toFileNameIndex);
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
@@ -321,12 +306,6 @@ export class Synchronizer {
           notifier,
           handler
         );
-        await this.saveLocalFileNameIndex(
-          oneResult,
-          fromAccessor,
-          dirPath,
-          fromFileNameIndex
-        );
         this.mergeResult(oneResult, fromToResult);
         notifier.incrementProcessed();
 
@@ -344,12 +323,6 @@ export class Synchronizer {
         recursively,
         notifier,
         handler
-      );
-      await this.saveLocalFileNameIndex(
-        oneResult,
-        fromAccessor,
-        dirPath,
-        fromFileNameIndex
       );
       this.mergeResult(oneResult, fromToResult);
       notifier.incrementProcessed();
@@ -373,25 +346,19 @@ export class Synchronizer {
         notifier,
         handler
       );
-      await this.saveLocalFileNameIndex(
-        oneResult,
-        fromAccessor,
-        dirPath,
-        fromFileNameIndex
-      );
       this.mergeResult(oneResult, toFromResult);
       notifier.incrementProcessed();
     }
+
+    fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+    await fromAccessor.saveFileNameIndex(dirPath);
+    toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+    await toAccessor.saveFileNameIndex(dirPath);
 
     const result: SyncResult = {
       forward: fromToResult.forward || toFromResult.backward,
       backward: fromToResult.backward || toFromResult.forward,
     };
-
-    if (result.forward) {
-      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
-      await toAccessor.saveFileNameIndex(dirPath);
-    }
 
     return result;
   }
