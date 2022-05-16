@@ -749,6 +749,7 @@ export class Synchronizer {
         if (fromDeleted != null && toDeleted == null) {
           if (fromDeleted < toModified) {
             await fromAccessor.doMakeDirectory(toObj);
+            toRecord.modified = Date.now();
             fromFileNameIndex[name] = deepCopy(toRecord);
             await this.synchronizeChildren(
               toAccessor,
@@ -798,6 +799,7 @@ export class Synchronizer {
         } else if (fromDeleted == null && toDeleted != null) {
           if (toDeleted < fromModified) {
             await toAccessor.doMakeDirectory(fromObj);
+            fromRecord.modified = Date.now();
             toFileNameIndex[name] = deepCopy(fromRecord);
             await this.synchronizeChildren(
               fromAccessor,
@@ -849,9 +851,9 @@ export class Synchronizer {
           if (fromModified === Synchronizer.NOT_EXISTS) {
             await fromAccessor.doMakeDirectory(toObj);
             if (!toRecord.modified) {
-              toRecord.modified = Date.now();
               result.forward = true;
             }
+            toRecord.modified = Date.now();
             fromFileNameIndex[name] = deepCopy(toRecord);
             result.backward = true;
             this.debug(
@@ -863,9 +865,9 @@ export class Synchronizer {
           } else if (toModified === Synchronizer.NOT_EXISTS) {
             await toAccessor.doMakeDirectory(fromObj);
             if (!fromRecord.modified) {
-              fromRecord.modified = Date.now();
               result.backward = true;
             }
+            fromRecord.modified = Date.now();
             toFileNameIndex[name] = deepCopy(fromRecord);
             result.forward = true;
             this.debug(
