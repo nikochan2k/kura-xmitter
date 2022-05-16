@@ -350,15 +350,17 @@ export class Synchronizer {
       notifier.incrementProcessed();
     }
 
-    fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
-    await fromAccessor.saveFileNameIndex(dirPath);
-    toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
-    await toAccessor.saveFileNameIndex(dirPath);
-
     const result: SyncResult = {
       forward: fromToResult.forward || toFromResult.backward,
       backward: fromToResult.backward || toFromResult.forward,
     };
+
+    if (result.forward || result.backward) {
+      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+      await fromAccessor.saveFileNameIndex(dirPath);
+      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+      await toAccessor.saveFileNameIndex(dirPath);
+    }
 
     return result;
   }
