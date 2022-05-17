@@ -277,9 +277,13 @@ export class Synchronizer {
     }
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
-    const fromNames = Object.keys(fromFileNameIndex);
+    const fromNames = Object.values(fromFileNameIndex)
+      .sort((a, b) => b.modified - a.modified)
+      .map((record) => record.obj.name);
     notifier.incrementTotal(fromNames.length);
-    const toNames = Object.keys(toFileNameIndex);
+    const toNames = Object.values(toFileNameIndex)
+      .sort((a, b) => b.modified - a.modified)
+      .map((record) => record.obj.name);
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
@@ -655,14 +659,14 @@ export class Synchronizer {
                   if (e2 instanceof NotFoundError) {
                     await this.deleteEntry(fromAccessor, fromObj, handler);
                     await this.deleteEntry(toAccessor, toObj, handler);
-                    const now = Date.now();
                     if (fromAccessor === this.localAccessor) {
                       delete fromFileNameIndex[name];
-                      toRecord.deleted = now;
                     } else {
                       delete toFileNameIndex[name];
-                      fromRecord.deleted = now;
                     }
+                    const now = Date.now();
+                    toRecord.deleted = now;
+                    fromRecord.deleted = now;
                     result.forward = true;
                     result.backward = true;
                     this.debug(
@@ -711,14 +715,14 @@ export class Synchronizer {
                   if (e2 instanceof NotFoundError) {
                     await this.deleteEntry(fromAccessor, fromObj, handler);
                     await this.deleteEntry(toAccessor, toObj, handler);
-                    const now = Date.now();
                     if (fromAccessor === this.localAccessor) {
                       delete fromFileNameIndex[name];
-                      toRecord.deleted = now;
                     } else {
                       delete toFileNameIndex[name];
-                      fromRecord.deleted = now;
                     }
+                    const now = Date.now();
+                    toRecord.deleted = now;
+                    fromRecord.deleted = now;
                     result.forward = true;
                     result.backward = true;
                     this.debug(
