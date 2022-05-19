@@ -37,14 +37,20 @@ export interface Handler {
     obj: FileSystemObject
   ) => Promise<boolean>;
   completed: (error?: any) => Promise<void>;
+  getNames: (fileNameIndex: FileNameIndex) => string[];
 }
 
 const DEFAULT_HANDLER: Handler = {
-  beforeCopy: async () => false,
   afterCopy: async () => {},
-  beforeDelete: async () => false,
   afterDelete: async () => {},
+  beforeCopy: async () => false,
+  beforeDelete: async () => false,
   completed: async () => {},
+  getNames: (fileNameIndex) => {
+    return Object.values(fileNameIndex)
+      .sort((a, b) => b.modified - a.modified)
+      .map((record) => record.obj.name);
+  },
 };
 
 export class Notifier {
@@ -277,13 +283,9 @@ export class Synchronizer {
     }
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
-    const fromNames = Object.values(fromFileNameIndex)
-      .sort((a, b) => b.modified - a.modified)
-      .map((record) => record.obj.name);
+    const fromNames = handler.getNames(fromFileNameIndex);
     notifier.incrementTotal(fromNames.length);
-    const toNames = Object.values(toFileNameIndex)
-      .sort((a, b) => b.modified - a.modified)
-      .map((record) => record.obj.name);
+    const toNames = handler.getNames(toFileNameIndex);
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
