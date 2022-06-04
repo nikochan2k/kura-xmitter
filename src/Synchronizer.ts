@@ -183,7 +183,6 @@ export class Synchronizer {
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
-    fromRecord.modified = Date.now();
 
     await handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
