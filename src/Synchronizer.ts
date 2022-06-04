@@ -36,7 +36,7 @@ export interface Handler {
     accessor: AbstractAccessor,
     obj: FileSystemObject
   ) => Promise<boolean>;
-  completed: (error?: any) => Promise<SyncResult>;
+  completed: (result: SyncResult, error?: any) => Promise<void>;
   getNames: (fileNameIndex: FileNameIndex) => string[];
 }
 
@@ -45,9 +45,7 @@ const DEFAULT_HANDLER: Handler = {
   afterDelete: async () => {},
   beforeCopy: async () => false,
   beforeDelete: async () => false,
-  completed: async () => {
-    return { forward: false, backward: false };
-  },
+  completed: async (result) => {},
   getNames: (fileNameIndex) => {
     return Object.values(fileNameIndex)
       .sort((a, b) => b.modified - a.modified)
@@ -165,7 +163,7 @@ export class Synchronizer {
         dirPath
       );
 
-      await handler.completed();
+      await handler.completed(result);
       return result;
     } catch (e) {
       await handler.completed(e);
