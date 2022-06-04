@@ -362,9 +362,28 @@ export class Synchronizer {
     };
 
     if (result.forward || result.backward) {
-      fromAccessor.dirPathIndex[dirPath] = fromFileNameIndex;
+      const fileNameIndex: FileNameIndex = {};
+      for (const [name, fromRecord] of Object.entries(fromFileNameIndex)) {
+        const toRecord = toFileNameIndex[name];
+        if (
+          (toRecord?.modified ?? 0) < fromRecord.modified ||
+          (toRecord?.deleted ?? 0) < (fromRecord.deleted ?? 0)
+        ) {
+          fileNameIndex[name] = fromRecord;
+        } else {
+          fileNameIndex[name] = toRecord;
+        }
+      }
+      for (const [name, toRecord] of Object.entries(toFileNameIndex)) {
+        const fromRecord = fromFileNameIndex[name];
+        if (!fromRecord) {
+          fileNameIndex[name] = toRecord;
+        }
+      }
+
+      fromAccessor.dirPathIndex[dirPath] = fileNameIndex;
       await fromAccessor.saveFileNameIndex(dirPath);
-      toAccessor.dirPathIndex[dirPath] = toFileNameIndex;
+      toAccessor.dirPathIndex[dirPath] = fileNameIndex;
       await toAccessor.saveFileNameIndex(dirPath);
     }
 
