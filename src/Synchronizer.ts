@@ -289,16 +289,12 @@ export class Synchronizer {
 
     const fromToResult: SyncResult = { forward: false, backward: false };
     const toFromResult: SyncResult = { forward: false, backward: false };
-    const newFromFileNameIndex: FileNameIndex = {};
-    const newToFileNameIndex: FileNameIndex = {};
 
     outer: for (const fromName of fromNames) {
-      newFromFileNameIndex[fromName] = fromFileNameIndex[fromName];
       if (this.excludeNameRegExp.test(fromName)) {
         notifier.incrementProcessed();
         continue;
       }
-      newToFileNameIndex[fromName] = fromFileNameIndex[fromName];
 
       for (let i = 0, end = toNames.length; i < end; i++) {
         const toName = toNames[i];
@@ -316,10 +312,6 @@ export class Synchronizer {
           notifier,
           handler
         );
-        if (oneResult.backward) {
-          newFromFileNameIndex[fromName] = toFileNameIndex[fromName];
-          newToFileNameIndex[fromName] = toFileNameIndex[fromName];
-        }
         this.mergeResult(oneResult, fromToResult);
         notifier.incrementProcessed();
 
@@ -345,7 +337,6 @@ export class Synchronizer {
     // source not found
     notifier.incrementTotal(toNames.length);
     for (const toName of toNames) {
-      newToFileNameIndex[toName] = toFileNameIndex[toName];
       if (this.excludeNameRegExp.test(toName)) {
         notifier.incrementProcessed();
         continue;
@@ -361,9 +352,6 @@ export class Synchronizer {
         notifier,
         handler
       );
-      if (oneResult.forward) {
-        newFromFileNameIndex[toName] = toFileNameIndex[toName];
-      }
       this.mergeResult(oneResult, toFromResult);
       notifier.incrementProcessed();
     }
@@ -373,11 +361,19 @@ export class Synchronizer {
       backward: fromToResult.backward || toFromResult.forward,
     };
 
-    if (result.forward || result.backward) {
-      fromAccessor.dirPathIndex[dirPath] = newFromFileNameIndex;
-      await fromAccessor.saveFileNameIndex(dirPath);
-      toAccessor.dirPathIndex[dirPath] = newToFileNameIndex;
-      await toAccessor.saveFileNameIndex(dirPath);
+    if (result.forward) {
+      if (toAccessor === this.remoteAccessor) {
+        await toAccessor.saveFileNameIndex(dirPath);
+      } else {
+        await fromAccessor.saveFileNameIndex(dirPath);
+      }
+    }
+    if (result.backward) {
+      if (fromAccessor === this.remoteAccessor) {
+        await toAccessor.saveFileNameIndex(dirPath);
+      } else {
+        await fromAccessor.saveFileNameIndex(dirPath);
+      }
     }
 
     return result;
