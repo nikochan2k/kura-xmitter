@@ -12,7 +12,7 @@ import {
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
 
-interface SyncResult {
+export interface SyncResult {
   backward: boolean;
   forward: boolean;
 }
@@ -36,7 +36,7 @@ export interface Handler {
     accessor: AbstractAccessor,
     obj: FileSystemObject
   ) => Promise<boolean>;
-  completed: (error?: any) => Promise<void>;
+  completed: (error?: any) => Promise<SyncResult>;
   getNames: (fileNameIndex: FileNameIndex) => string[];
 }
 
@@ -45,7 +45,9 @@ const DEFAULT_HANDLER: Handler = {
   afterDelete: async () => {},
   beforeCopy: async () => false,
   beforeDelete: async () => false,
-  completed: async () => {},
+  completed: async () => {
+    return { forward: false, backward: false };
+  },
   getNames: (fileNameIndex) => {
     return Object.values(fileNameIndex)
       .sort((a, b) => b.modified - a.modified)
