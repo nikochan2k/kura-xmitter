@@ -6,8 +6,12 @@ import {
   FileSystemAsync,
   FileSystemObject,
   getName,
+  INDEX_DIR,
   NotFoundError,
+  objectToText,
   Record,
+  textToObject,
+  toText,
   Transferer,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
@@ -38,6 +42,53 @@ export interface Handler {
   ) => Promise<boolean>;
   completed: (result: SyncResult, error?: any) => Promise<void>;
   getNames: (fileNameIndex: FileNameIndex) => string[];
+}
+
+interface IndexMeta {
+  remoteTimestamp: number;
+}
+
+const INDEX_META_FILE = ".index.json";
+
+function createMetaFilePath(dirPath: string) {
+  let indexDir = INDEX_DIR + dirPath;
+  if (!indexDir.endsWith(DIR_SEPARATOR)) {
+    indexDir += DIR_SEPARATOR;
+  }
+
+  const fullPath =
+    indexDir.substring(0, indexDir.length - 1) +
+    DIR_SEPARATOR +
+    INDEX_META_FILE;
+  return fullPath;
+}
+
+async function getRemoteTimestamp(accessor: AbstractAccessor, dirPath: string) {
+  const fullPath = createMetaFilePath(dirPath);
+  try {
+    const content = await accessor.doReadContent(fullPath);
+    const text = await toText(content);
+    const indexMeta: IndexMeta = textToObject(text);
+    return indexMeta.remoteTimestamp;
+  } catch (e) {
+    if (e instanceof NotFoundError) {
+      return await setRemoteTimestamp(accessor, dirPath, 0);
+    } else {
+      throw e;
+    }
+  }
+}
+
+async function setRemoteTimestamp(
+  accessor: AbstractAccessor,
+  dirPath: string,
+  remoteTimestamp: number
+) {
+  const fullPath = createMetaFilePath(dirPath);
+  const indexMeta: IndexMeta = { remoteTimestamp };
+  const text = objectToText(indexMeta);
+  await accessor.doWriteContent(fullPath, text);
+  return indexMeta.remoteTimestamp;
 }
 
 const DEFAULT_HANDLER: Handler = {
@@ -262,37 +313,34 @@ export class Synchronizer {
       return SYNC_RESULT_FALSES;
     }
 
-    try {
-      var fromIndexObj = await fromAccessor.getFileNameIndexObject(dirPath);
-    } catch {}
-    try {
-      var toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
-    } catch {}
+    let remoteTimestamp: number;
 
     if (fromAccessor === this.remoteAccessor) {
-      if (
-        toIndexObj &&
-        fromIndexObj &&
-        fromIndexObj.lastModified <= toIndexObj.lastModified // local timestamp newer ?
-      ) {
-        this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
-        return SYNC_RESULT_FALSES;
-      }
+      try {
+        const fromIndexObj = await fromAccessor.getFileNameIndexObject(dirPath);
+        remoteTimestamp = await getRemoteTimestamp(toAccessor, dirPath);
+        if (fromIndexObj.lastModified === remoteTimestamp) {
+          this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
+          return SYNC_RESULT_FALSES;
+        }
 
-      fromAccessor.clearFileNameIndex(dirPath);
+        remoteTimestamp = undefined;
+        fromAccessor.clearFileNameIndex(dirPath);
+      } catch {}
     }
 
     if (toAccessor === this.remoteAccessor) {
-      if (
-        toIndexObj &&
-        fromIndexObj &&
-        toIndexObj.lastModified <= fromIndexObj.lastModified // local timestamp newer ?
-      ) {
-        this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
-        return SYNC_RESULT_FALSES;
-      }
+      try {
+        const toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
+        remoteTimestamp = await getRemoteTimestamp(fromAccessor, dirPath);
+        if (toIndexObj.lastModified === remoteTimestamp) {
+          this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
+          return SYNC_RESULT_FALSES;
+        }
 
-      toAccessor.clearFileNameIndex(dirPath);
+        remoteTimestamp = undefined;
+        toAccessor.clearFileNameIndex(dirPath);
+      } catch {}
     }
 
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
@@ -376,17 +424,36 @@ export class Synchronizer {
       backward: fromToResult.backward || toFromResult.forward,
     };
 
-    if (result.forward) {
-      if (toAccessor === this.remoteAccessor) {
+    if (toAccessor === this.remoteAccessor) {
+      if (result.forward) {
         await toAccessor.saveFileNameIndex(dirPath);
-      } else {
+      }
+      if (result.backward) {
         await fromAccessor.saveFileNameIndex(dirPath);
       }
-    }
-    if (fromAccessor === this.remoteAccessor) {
-      await toAccessor.saveFileNameIndex(dirPath);
+      if (remoteTimestamp == null) {
+        const toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
+        await setRemoteTimestamp(
+          fromAccessor,
+          dirPath,
+          toIndexObj.lastModified
+        );
+      }
     } else {
-      await fromAccessor.saveFileNameIndex(dirPath);
+      if (result.forward) {
+        await fromAccessor.saveFileNameIndex(dirPath);
+      }
+      if (result.backward) {
+        await toAccessor.saveFileNameIndex(dirPath);
+      }
+      if (remoteTimestamp == null) {
+        const fromIndexObj = await fromAccessor.getFileNameIndexObject(dirPath);
+        await setRemoteTimestamp(
+          toAccessor,
+          dirPath,
+          fromIndexObj.lastModified
+        );
+      }
     }
 
     return result;
