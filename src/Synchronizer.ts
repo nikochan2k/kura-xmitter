@@ -91,7 +91,6 @@ export class Synchronizer {
   private excludeNameRegExp: RegExp;
   private excludePathRegExp: RegExp;
   private localAccessor: AbstractAccessor;
-  private objectsHistory: Set<string>;
   private remoteAccessor: AbstractAccessor;
   private transferer: Transferer;
 
@@ -122,8 +121,6 @@ export class Synchronizer {
     if (!this.remoteAccessor || !this.remoteAccessor.options.index) {
       throw new Error(`Destination filesystem "${remoteFS.name}" has no index`);
     }
-
-    this.objectsHistory = new Set();
 
     if (options.transferer) {
       this.transferer = options.transferer;
@@ -262,24 +259,43 @@ export class Synchronizer {
     handler: Handler
   ): Promise<SyncResult> {
     if (this.excludePathRegExp.test(dirPath)) {
-      return { forward: false, backward: false };
+      return SYNC_RESULT_FALSES;
     }
 
+    try {
+      var fromIndexObj = await fromAccessor.getFileNameIndexObject(dirPath);
+    } catch {}
+    try {
+      var toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
+    } catch {}
+
     if (fromAccessor === this.remoteAccessor) {
+      if (
+        toIndexObj &&
+        fromIndexObj &&
+        toIndexObj.size === fromIndexObj.size && // same size ?
+        fromIndexObj.lastModified < toIndexObj.lastModified // local timestamp newer ?
+      ) {
+        return SYNC_RESULT_FALSES;
+      }
+
       fromAccessor.clearFileNameIndex(dirPath);
-      if (!this.objectsHistory.has(dirPath)) {
-        await fromAccessor.getObjects(dirPath);
-        this.objectsHistory.add(dirPath);
-      }
     }
-    const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
+
     if (toAccessor === this.remoteAccessor) {
-      toAccessor.clearFileNameIndex(dirPath);
-      if (!this.objectsHistory.has(dirPath)) {
-        await toAccessor.getObjects(dirPath);
-        this.objectsHistory.add(dirPath);
+      if (
+        toIndexObj &&
+        fromIndexObj &&
+        fromIndexObj.size === toIndexObj.size && // same size ?
+        toIndexObj.lastModified < fromIndexObj.lastModified // local timestamp newer ?
+      ) {
+        return SYNC_RESULT_FALSES;
       }
+
+      toAccessor.clearFileNameIndex(dirPath);
     }
+
+    const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
 
     const fromNames = handler.getNames(fromFileNameIndex);
