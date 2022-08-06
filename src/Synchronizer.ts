@@ -383,12 +383,10 @@ export class Synchronizer {
         await fromAccessor.saveFileNameIndex(dirPath);
       }
     }
-    if (result.backward) {
-      if (fromAccessor === this.remoteAccessor) {
-        await toAccessor.saveFileNameIndex(dirPath);
-      } else {
-        await fromAccessor.saveFileNameIndex(dirPath);
-      }
+    if (fromAccessor === this.remoteAccessor) {
+      await toAccessor.saveFileNameIndex(dirPath);
+    } else {
+      await fromAccessor.saveFileNameIndex(dirPath);
     }
 
     return result;
