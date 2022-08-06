@@ -273,8 +273,7 @@ export class Synchronizer {
       if (
         toIndexObj &&
         fromIndexObj &&
-        toIndexObj.size === fromIndexObj.size && // same size ?
-        fromIndexObj.lastModified < toIndexObj.lastModified // local timestamp newer ?
+        fromIndexObj.lastModified <= toIndexObj.lastModified // local timestamp newer ?
       ) {
         this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
         return SYNC_RESULT_FALSES;
@@ -287,8 +286,7 @@ export class Synchronizer {
       if (
         toIndexObj &&
         fromIndexObj &&
-        fromIndexObj.size === toIndexObj.size && // same size ?
-        toIndexObj.lastModified < fromIndexObj.lastModified // local timestamp newer ?
+        toIndexObj.lastModified <= fromIndexObj.lastModified // local timestamp newer ?
       ) {
         this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
         return SYNC_RESULT_FALSES;
