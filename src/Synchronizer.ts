@@ -323,13 +323,10 @@ export class Synchronizer {
           this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
           return SYNC_RESULT_FALSES;
         }
-
-        remoteTimestamp = undefined;
-        fromAccessor.clearFileNameIndex(dirPath);
       } catch {}
-    }
 
-    if (toAccessor === this.remoteAccessor) {
+      fromAccessor.clearFileNameIndex(dirPath);
+    } else {
       try {
         const toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
         remoteTimestamp = await getRemoteTimestamp(fromAccessor, dirPath);
@@ -337,10 +334,9 @@ export class Synchronizer {
           this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
           return SYNC_RESULT_FALSES;
         }
-
-        remoteTimestamp = undefined;
-        toAccessor.clearFileNameIndex(dirPath);
       } catch {}
+
+      toAccessor.clearFileNameIndex(dirPath);
     }
 
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
@@ -431,7 +427,7 @@ export class Synchronizer {
       if (result.backward) {
         await fromAccessor.saveFileNameIndex(dirPath);
       }
-      if (remoteTimestamp == null) {
+      if (result.forward || remoteTimestamp == null) {
         const toIndexObj = await toAccessor.getFileNameIndexObject(dirPath);
         await setRemoteTimestamp(
           fromAccessor,
@@ -446,7 +442,7 @@ export class Synchronizer {
       if (result.backward) {
         await toAccessor.saveFileNameIndex(dirPath);
       }
-      if (remoteTimestamp == null) {
+      if (result.forward || remoteTimestamp == null) {
         const fromIndexObj = await fromAccessor.getFileNameIndexObject(dirPath);
         await setRemoteTimestamp(
           toAccessor,
