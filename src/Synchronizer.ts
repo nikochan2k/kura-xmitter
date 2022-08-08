@@ -330,8 +330,8 @@ export class Synchronizer {
       if (!recursively) {
         const timestamp = await getTimestamp(toAccessor, dirPath);
         if (
-          fromIndexObj.lastModified === timestamp.remote &&
-          toIndexObj.lastModified === timestamp.local
+          fromIndexObj?.lastModified === timestamp.remote &&
+          toIndexObj?.lastModified === timestamp.local
         ) {
           this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
           return SYNC_RESULT_FALSES;
@@ -342,8 +342,8 @@ export class Synchronizer {
 
       const timestamp = await getTimestamp(fromAccessor, dirPath);
       if (
-        toIndexObj.lastModified === timestamp.remote &&
-        fromIndexObj.lastModified === timestamp.local
+        toIndexObj?.lastModified === timestamp.remote &&
+        fromIndexObj?.lastModified === timestamp.local
       ) {
         this.debug(fromAccessor, toAccessor, "Not changed", dirPath);
         return SYNC_RESULT_FALSES;
