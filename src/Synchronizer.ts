@@ -220,7 +220,9 @@ export class Synchronizer {
       await handler.completed(result);
       return result;
     } catch (e) {
-      await handler.completed(SYNC_RESULT_FALSES, e);
+      const result: SyncResult = { ...SYNC_RESULT_FALSES, errors: [e] };
+      await handler.completed(result, e);
+      return result;
     }
   }
 
