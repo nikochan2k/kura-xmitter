@@ -474,8 +474,8 @@ export class Synchronizer {
       await setTimestamp(
         toAccessor,
         dirPath,
-        toIndexObj.lastModified,
-        fromIndexObj.lastModified
+        toIndexObj ? toIndexObj.lastModified : 0,
+        fromIndexObj ? fromIndexObj.lastModified : 0
       );
     }
 
