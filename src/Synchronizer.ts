@@ -305,6 +305,7 @@ export class Synchronizer {
   private mergeResult(result: SyncResult, merged: SyncResult) {
     merged.forward = merged.forward || result.forward;
     merged.backward = merged.backward || result.backward;
+    merged.errors = [...merged.errors, ...result.errors];
   }
 
   private async synchronizeChildren(
