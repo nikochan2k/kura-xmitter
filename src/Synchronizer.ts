@@ -459,7 +459,7 @@ export class Synchronizer {
         fromAccessor,
         dirPath,
         fromIndexObj ? fromIndexObj.lastModified : 0,
-        toIndexObj ? fromIndexObj.lastModified : 0
+        toIndexObj ? toIndexObj.lastModified : 0
       );
     } else {
       if (result.forward) {
