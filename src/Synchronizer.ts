@@ -7,6 +7,7 @@ import {
   FileSystemAsync,
   FileSystemObject,
   NotFoundError,
+  onError,
   Transferer,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
@@ -164,6 +165,7 @@ export class Synchronizer {
       await handler.completed(result);
       return result;
     } catch (e) {
+      console.warn("synchronizeDirectory", { dirPath, recursively }, e);
       const result: SyncResult = { ...SYNC_RESULT_FALSES, errors: [e] };
       await handler.completed(result, e);
       return result;
