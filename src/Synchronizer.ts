@@ -7,7 +7,6 @@ import {
   FileSystemAsync,
   FileSystemObject,
   NotFoundError,
-  onError,
   Transferer,
 } from "kura";
 import { SyncOptions } from "./SyncOptions";
@@ -185,6 +184,7 @@ export class Synchronizer {
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
+    await toAccessor.saveRecord(obj.fullPath, fromRecord);
 
     await handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
@@ -244,6 +244,7 @@ export class Synchronizer {
   ) {
     const obj = this.toFileSystemObject(record);
     await accessor.doPutObject(obj);
+    await accessor.saveRecord(obj.fullPath, { modified: record.modified });
   }
 
   private mergeResult(result: SyncResult, merged: SyncResult) {
@@ -266,6 +267,8 @@ export class Synchronizer {
 
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
+
+    console.warn(fromFileNameIndex, toFileNameIndex);
 
     const fromNames = handler.getNames(fromFileNameIndex);
     notifier.incrementTotal(fromNames.length);
@@ -429,7 +432,7 @@ export class Synchronizer {
               );
             } catch (e) {
               if (e instanceof NotFoundError) {
-                await toAccessor.deleteRecord(fullPath, deepCopy(toRecord));
+                await toAccessor.deleteRecord(fullPath);
                 this.debug(
                   fromAccessor,
                   toAccessor,
@@ -482,7 +485,7 @@ export class Synchronizer {
               );
             } catch (e) {
               if (e instanceof NotFoundError) {
-                await fromAccessor.deleteRecord(fullPath, deepCopy(fromRecord));
+                await fromAccessor.deleteRecord(fullPath);
                 this.debug(
                   fromAccessor,
                   toAccessor,
@@ -731,11 +734,7 @@ export class Synchronizer {
               fullPath
             );
           } else if (toModified < fromModified) {
-            await fromAccessor.saveRecord(
-              fullPath,
-              toRecord.modified,
-              toRecord.size
-            );
+            await fromAccessor.saveRecord(fullPath, toRecord);
             result.backward = true;
             this.debug(
               fromAccessor,
@@ -744,11 +743,7 @@ export class Synchronizer {
               fullPath
             );
           } else if (fromModified < toModified) {
-            await toAccessor.saveRecord(
-              fullPath,
-              fromRecord.modified,
-              fromRecord.size
-            );
+            await toAccessor.saveRecord(fullPath, fromRecord);
             result.forward = true;
             this.debug(
               fromAccessor,
