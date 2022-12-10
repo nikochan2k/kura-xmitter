@@ -244,7 +244,9 @@ export class Synchronizer {
   ) {
     const obj = this.toFileSystemObject(record);
     await accessor.doPutObject(obj);
-    await accessor.saveRecord(obj.fullPath, { modified: record.modified });
+    await accessor.saveRecord(obj.fullPath, {
+      modified: record.modified ?? Date.now(),
+    });
   }
 
   private mergeResult(result: SyncResult, merged: SyncResult) {
@@ -267,8 +269,6 @@ export class Synchronizer {
 
     const fromFileNameIndex = await fromAccessor.getFileNameIndex(dirPath);
     const toFileNameIndex = await toAccessor.getFileNameIndex(dirPath);
-
-    console.warn(fromFileNameIndex, toFileNameIndex);
 
     const fromNames = handler.getNames(fromFileNameIndex);
     notifier.incrementTotal(fromNames.length);
@@ -432,7 +432,7 @@ export class Synchronizer {
               );
             } catch (e) {
               if (e instanceof NotFoundError) {
-                await toAccessor.deleteRecord(fullPath);
+                await toAccessor.deleteRecord(fullPath, true);
                 this.debug(
                   fromAccessor,
                   toAccessor,
@@ -485,7 +485,7 @@ export class Synchronizer {
               );
             } catch (e) {
               if (e instanceof NotFoundError) {
-                await fromAccessor.deleteRecord(fullPath);
+                await fromAccessor.deleteRecord(fullPath, true);
                 this.debug(
                   fromAccessor,
                   toAccessor,

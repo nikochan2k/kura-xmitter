@@ -8,12 +8,9 @@
       "name": "Debug Jest Tests",
       "type": "node",
       "request": "launch",
+      "preLaunchTask": "Compile TypeScript",
       "program": "${workspaceRoot}/node_modules/.bin/jest",
-      "protocol": "inspector",
       "args": ["--runInBand"],
-      "windows": {
-        "program": "${workspaceRoot}/node_modules/jest/bin/jest.js"
-      },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }
