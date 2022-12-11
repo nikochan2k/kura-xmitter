@@ -5,7 +5,7 @@ import * as idbFS from "./idbFS";
 import * as s3FS from "./s3FS";
 import { testAll } from "./syncronize";
 
-testAll("idb => s3", async () => {
+testAll("s3 => idb", async () => {
   const local = await idbFS.getFileSystem();
   const remote = await s3FS.getFileSystem();
 
@@ -13,5 +13,5 @@ testAll("idb => s3", async () => {
     verbose: false,
     transferer: new Transferer(),
   });
-  return { local, remote, synchronizer };
+  return { local: remote, remote: local, synchronizer };
 });
