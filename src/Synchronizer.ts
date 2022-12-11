@@ -41,11 +41,17 @@ export interface Handler {
 }
 
 const DEFAULT_HANDLER: Handler = {
-  afterCopy: async () => {},
-  afterDelete: async () => {},
-  beforeCopy: async () => false,
-  beforeDelete: async () => false,
-  completed: async (result) => {},
+  afterCopy: async () => {
+    /* noop */
+  },
+  afterDelete: async () => {
+    /* noop */
+  },
+  beforeCopy: () => Promise.resolve(false),
+  beforeDelete: () => Promise.resolve(false),
+  completed: async (result) => {
+    /* noop */
+  },
   getNames: (fileNameIndex) => {
     return Object.values(fileNameIndex)
       .sort((a, b) => b.modified - a.modified)
@@ -57,7 +63,11 @@ export class Notifier {
   private _processed = 0;
   private _total = 0;
 
-  constructor(private _callback = (processed: number, total: number) => {}) {}
+  constructor(
+    private _callback = (processed: number, total: number) => {
+      /* noop */
+    }
+  ) {}
 
   public get processed() {
     return this._processed;
@@ -157,6 +167,7 @@ export class Synchronizer {
       this.debug(
         this.localAccessor,
         this.remoteAccessor,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `SyncResult: localToRemote=${result.forward}, remoteToLocal=${result.backward}`,
         dirPath
       );
@@ -184,7 +195,10 @@ export class Synchronizer {
 
     toAccessor.clearContentsCache(obj.fullPath);
     await this.transferer.transfer(fromAccessor, obj, toAccessor, obj);
-    await toAccessor.saveRecord(obj.fullPath, fromRecord);
+    await toAccessor.saveRecord(obj.fullPath, {
+      modified: fromRecord.modified,
+      size: fromRecord.size,
+    });
 
     await handler.afterCopy(fromAccessor, toAccessor, obj);
     this.debug(fromAccessor, toAccessor, "copyFile", obj.fullPath);
@@ -252,6 +266,7 @@ export class Synchronizer {
   private mergeResult(result: SyncResult, merged: SyncResult) {
     merged.forward = merged.forward || result.forward;
     merged.backward = merged.backward || result.backward;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     merged.errors = [...merged.errors, ...result.errors];
   }
 
@@ -329,7 +344,7 @@ export class Synchronizer {
         continue;
       }
 
-      let oneResult = await this.synchronizeOne(
+      const oneResult = await this.synchronizeOne(
         toAccessor,
         toFileNameIndex,
         fromAccessor,
@@ -346,6 +361,7 @@ export class Synchronizer {
     const result: SyncResult = {
       forward: fromToResult.forward || toFromResult.backward,
       backward: fromToResult.backward || toFromResult.forward,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       errors: [...fromToResult.errors, ...toFromResult.errors],
     };
 

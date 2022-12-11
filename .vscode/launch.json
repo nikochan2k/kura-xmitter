@@ -8,9 +8,8 @@
       "name": "Debug Jest Tests",
       "type": "node",
       "request": "launch",
-      "preLaunchTask": "Compile TypeScript",
       "program": "${workspaceRoot}/node_modules/.bin/jest",
-      "args": ["--runInBand"],
+      "args": ["--runInBand", "--testTimeout", "60000"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }

@@ -1,10 +1,8 @@
-require("fake-indexeddb/auto");
+import { FileSystemAsync } from "kura";
 import { S3 } from "aws-sdk";
-import { IdbLocalFileSystemAsync } from "kura";
 import { S3LocalFileSystemAsync } from "kura-s3";
-import { testAll } from "./syncronize";
 
-testAll(async () => {
+export async function getFileSystem(purge = true): Promise<FileSystemAsync> {
   const options: S3.ClientConfiguration = {
     accessKeyId: "minioadmin",
     secretAccessKey: "minioadmin",
@@ -21,22 +19,14 @@ testAll(async () => {
     options,
     "web-file-system-test",
     "example",
-    { index: true }
+    { index: true, noCache: true }
   );
-  const local = await s3FileSystem.requestFileSystemAsync(
+  const fs = await s3FileSystem.requestFileSystemAsync(
     window.PERSISTENT,
     Number.MAX_VALUE
   );
-  await local.filesystem.accessor.purge();
-
-  const idbFileSystem = new IdbLocalFileSystemAsync("web-file-system-test", {
-    index: true,
-  });
-  const remote = await idbFileSystem.requestFileSystemAsync(
-    window.PERSISTENT,
-    Number.MAX_VALUE
-  );
-  await remote.filesystem.accessor.purge();
-
-  return { local, remote };
-});
+  if (purge) {
+    fs.filesystem.accessor.purge();
+  }
+  return fs;
+}
