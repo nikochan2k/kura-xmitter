@@ -15,7 +15,12 @@ export async function getFileSystem(purge = true): Promise<FileSystemAsync> {
     Number.MAX_VALUE
   );
   if (purge) {
-    await fs.filesystem.accessor.purge();
+    try {
+      await fs.filesystem.accessor.purge();
+    } catch (e) {
+      console.warn(e);
+    }
   }
+
   return fs;
 }

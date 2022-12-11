@@ -237,17 +237,17 @@ export class Synchronizer {
       }
 
       if (isFile) {
-        await accessor.delete(fullPath, true);
+        await accessor.delete(fullPath, true, false);
       } else {
-        await accessor.deleteRecursively(fullPath);
+        await accessor.deleteRecursively(fullPath, false);
       }
 
       await handler.afterDelete(accessor, obj);
     } catch (e) {
       if (e instanceof NotFoundError) {
-        console.info(e, fullPath);
+        console.info(e, fullPath, "deleteEntry");
       } else {
-        throw e;
+        console.warn(e, fullPath, "deleteEntry");
       }
     }
   }
@@ -472,8 +472,7 @@ export class Synchronizer {
             } else {
               if (fromAccessor === this.localAccessor) {
                 // delete local index
-                const indexPath = await fromAccessor.createIndexPath(fullPath);
-                await fromAccessor.doDelete(indexPath, true);
+                await this.truncateRecord(toAccessor, fullPath);
               }
               this.debug(
                 fromAccessor,
@@ -525,8 +524,7 @@ export class Synchronizer {
             } else {
               if (toAccessor === this.localAccessor) {
                 // delete local index
-                const indexPath = await toAccessor.createIndexPath(fullPath);
-                await toAccessor.doDelete(indexPath, true);
+                await this.truncateRecord(toAccessor, fullPath);
               }
               this.debug(
                 toAccessor,
@@ -676,8 +674,7 @@ export class Synchronizer {
             } else {
               if (fromAccessor === this.localAccessor) {
                 // delete local index
-                const indexPath = await fromAccessor.createIndexPath(fullPath);
-                await fromAccessor.doDelete(indexPath, true);
+                await this.truncateRecord(toAccessor, fullPath);
               }
               this.debug(
                 fromAccessor,
@@ -718,8 +715,7 @@ export class Synchronizer {
             } else {
               if (toAccessor === this.localAccessor) {
                 // delete local index
-                const indexPath = await toAccessor.createIndexPath(fullPath);
-                await toAccessor.doDelete(indexPath, true);
+                await this.truncateRecord(toAccessor, fullPath);
               }
               this.debug(
                 toAccessor,
@@ -804,6 +800,20 @@ export class Synchronizer {
       size: record.size,
     };
     return obj;
+  }
+
+  private async truncateRecord(accessor: AbstractAccessor, fullPath: string) {
+    const indexPath = await accessor.createIndexPath(fullPath, false);
+    try {
+      await accessor.doGetObject(fullPath, true);
+      await accessor.doDelete(indexPath, true);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        console.info(e, fullPath, "truncateRecord");
+      } else {
+        console.warn(e, fullPath, "truncateRecord");
+      }
+    }
   }
 
   private warn(

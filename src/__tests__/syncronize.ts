@@ -13,11 +13,17 @@ export function testAll(
   let remote: FileSystemAsync;
   let synchronizer: Synchronizer;
 
-  beforeAll(async () => {
-    const result = await prepare();
-    local = result.local;
-    remote = result.remote;
-    synchronizer = result.synchronizer;
+  beforeAll(async (done) => {
+    try {
+      const result = await prepare();
+      local = result.local;
+      remote = result.remote;
+      synchronizer = result.synchronizer;
+    } catch (e) {
+      fail(e);
+    } finally {
+      done();
+    }
   });
 
   test(`[${message}] add a empty file, sync all`, async (done) => {
